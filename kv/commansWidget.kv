@@ -1,0 +1,47 @@
+<DiscOperation>:
+    size_hint: (None, None)
+    width: 1300
+    height: 200
+    canvas:
+        Rectangle:
+            source: 'images/bgWg.png'
+            
+            size: self.size
+        BorderImage:
+            source: 'images/shadow32.png'
+            border: (30,30,36,36)
+            size: (self.width + 56, self.height + 56)
+            pos: (-28, -28)
+    FloatLayout:
+        Button:
+            id: startBtn
+            text: "Run"
+            size: 150, 150
+            size_hint: None, None
+            #background_normal: 'images/disk.png'
+            #background_down: 'images/diskgs.png'
+            pos: [25, 25]  # Відносно self.discOp
+            on_press: root.update_label()
+
+        Label:
+            text: root.label_text
+            size_hint: None, None
+            font_size: 32
+            pos: [380, 75]  # Відносно self.discOp
+            halign: 'center'
+            valign: 'middle'
+            #text_size: self.size
+        
+        ProgressBar:
+            size_hint: None, None
+            width: 800
+            #height: 150
+            pos: [250, 25]  # Відносно self.discOp
+            max: 100
+            value: root.progresBarVal    
+        Image:
+            id: statusLbl
+            source: root.statusIcon
+            size_hint: None, None
+            size: 100, 100
+            pos: [1150, 25]
