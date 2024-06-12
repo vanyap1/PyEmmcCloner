@@ -15,22 +15,25 @@
     FloatLayout:
         Button:
             id: startBtn
-            text: "Run"
+            text: root.btnText
             size: 150, 150
             size_hint: None, None
+            font_size: 38
             #background_normal: 'images/disk.png'
             #background_down: 'images/diskgs.png'
             pos: [25, 25]  # Відносно self.discOp
-            on_press: root.update_label()
+            on_press: root.runProc(root.targetDev, root.masterImage)
 
         Label:
             text: root.label_text
             size_hint: None, None
-            font_size: 32
-            pos: [380, 75]  # Відносно self.discOp
-            halign: 'center'
+            font_size: 28
+            markup: True
+            width: 800
+            pos: [250, 75]  # Відносно self.discOp
+            halign: 'left'
             valign: 'middle'
-            #text_size: self.size
+            text_size: self.width, None
         
         ProgressBar:
             size_hint: None, None
