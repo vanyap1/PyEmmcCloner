@@ -44,7 +44,7 @@ Builder.load_file('kv/statusbar.kv')
 
 
 
-Window.size = (1024, 600)
+Window.size = (1920, 1080)
 startYPos = 700             #Functional block
 
 class UpperStatusbar(Screen):
@@ -83,7 +83,7 @@ class ImageWriter(Thread):
         self.start()
     
     def run(self):
-        cmd = f'dd if=/home/vanya/master.img of=/dev/{self.devName.lower()} bs=4M count=125 status=progress'
+        cmd = f'dd if=/home/vanya/master.img of=/dev/{self.devName.lower()} bs=4M status=progress' #count=125 
         master_fd, slave_fd = pty.openpty()
         process = subprocess.Popen(shlex.split(cmd), stdout=slave_fd, stderr=subprocess.STDOUT, close_fds=True)
         os.close(slave_fd)
