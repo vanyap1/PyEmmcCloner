@@ -1,0 +1,36 @@
+<UpperStatusbar>:
+    size_hint: (None, None)
+    width: 1920-80
+    height: 160
+    canvas.before:
+        Color:
+            rgba: 1, 1, 1, 0.2  # Білий колір з прозорістю 50%
+        Rectangle:
+            size: self.size
+            pos: self.pos
+
+    Label:                      
+        text: root.timeLbl
+        size_hint: None, None
+        font_size: 100
+        font_name: 'fonts/hemi_head_bd_it.ttf'
+        markup: True
+        width: self.parent.width
+        height: self.parent.height
+        pos: self.parent.pos
+        halign: 'left'
+        valign: 'middle'
+        text_size: self.size
+
+    Label:                      
+        text: root.runStatus
+        size_hint: None, None
+        font_size: 32
+        font_name: 'fonts/hemi_head_bd_it.ttf'
+        markup: True
+        width: self.parent.width
+        height: self.parent.height
+        pos: (self.parent.pos[0] + 1600, self.parent.pos[1])
+        halign: 'left'
+        valign: 'middle'
+        text_size: self.size    

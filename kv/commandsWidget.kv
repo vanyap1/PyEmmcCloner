@@ -24,7 +24,7 @@
             pos: [25, 25]  # Відносно self.discOp
             on_press: root.runProc(root.targetDev, root.masterImage)
 
-        Label:
+        Label:                      #Status bar
             text: root.label_text
             size_hint: None, None
             font_size: 28
@@ -35,6 +35,18 @@
             valign: 'middle'
             text_size: self.width, None
         
+        Label:                      #Pass/Fail result counter bar
+            text: root.slotStatusCounter
+            size_hint: None, None
+            font_size: 16
+            markup: True
+            width: 800
+            pos: [250, -10]  # Відносно self.discOp
+            halign: 'left'
+            valign: 'middle'
+            text_size: self.width, None
+
+
         ProgressBar:
             size_hint: None, None
             width: 800
