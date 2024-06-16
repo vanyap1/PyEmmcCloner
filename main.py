@@ -18,6 +18,8 @@ from kivy.uix.scatter import Scatter
 from kivy.properties import StringProperty, NumericProperty, BooleanProperty, ObjectProperty
 from datetime import datetime, date, timedelta
 from collections import namedtuple
+from remoteCtrl import start_server_in_thread
+
 
 
 #import io , re, smbus # , i2c , psutil
@@ -26,7 +28,7 @@ from kivy.core.window import Window
 from kivy.factory import Factory
 
 globalMasterImage = "/home/vanya/master.img"
-targetdDevices = ["SDC", "SDx","SDx","SDx"]
+targetdDevices = ["SDC", "SDx","SDx","SDx","SDx", "SDW"]
 Result = namedtuple('Result', ['passed', 'failed'])
 
 
@@ -44,8 +46,8 @@ Builder.load_file('kv/statusbar.kv')
 
 
 
-Window.size = (1920, 1080)
-startYPos = 700             #Functional block
+Window.size = (1024, 600)
+startYPos = 188             #Functional block
 
 class UpperStatusbar(Screen):
     timeLbl = StringProperty("System idle")
@@ -54,7 +56,7 @@ class UpperStatusbar(Screen):
 
 class DiscOperation(Screen):
     label_text = StringProperty("System idle")
-    statusIcon = StringProperty("images/green_tick.png")
+    slotCurrentStatus = StringProperty("pending")
     progresBarVal = NumericProperty(0)
     slotStatusCounter = StringProperty("Passed: 0; Failed: 0; Yield: 100%")
     targetDev = StringProperty("none")
@@ -65,9 +67,10 @@ class DiscOperation(Screen):
     passed = NumericProperty(0)
 
 
-    def runProc(self, targetDev, masterImage):
+    def runProc(self):
+        self.slotCurrentStatus = "awaiting"
         self.label_text = "Wait to finish process"
-        self.statusIcon = "images/led_on_y.png"
+        #self.statusIcon = "images/led_on_y.png"
         self.ids.startBtn.disabled = True
         ImageWriter(self, self.targetDev, self.masterImage)
         
@@ -93,26 +96,29 @@ class ImageWriter(Thread):
                 if output:
                     print(output, end='')
                     self.main_loop.label_text = f"[color={statusColor['pending']}]{output}[/color]"
+                    self.main_loop.slotCurrentStatus = f"progress:{output}"
             except OSError:
                 break
         os.close(master_fd)
         process.wait()
         
         if process.returncode == 0:
-            self.main_loop.statusIcon = "images/green_tick.png"   
             self.main_loop.label_text = f"Process: [color={statusColor['pass']}]PASSED[/color]"
-            self.main_loop.passed += 1 
+            self.main_loop.passed += 1
+            self.main_loop.slotCurrentStatus = "pass" 
         else:
-            self.main_loop.statusIcon = "images/led_on_r.png"   
             self.main_loop.label_text = f"Process: [color={statusColor['fail']}]FAILED[/color]"
             self.main_loop.failed += 1
+            self.main_loop.slotCurrentStatus = "fail"
+
         if ((self.main_loop.failed + self.main_loop.passed) != 0):
             
             yieldVal = (self.main_loop.passed / (self.main_loop.failed + self.main_loop.passed))*100
         
         self.main_loop.ids.startBtn.disabled = False
         self.main_loop.slotStatusCounter = f"[color={statusColor['pass']}]Passed: {self.main_loop.passed}[/color]; [color={statusColor['fail']}]Failed: {self.main_loop.failed}[/color]; Yield: {yieldVal:.1f}%"
-        #return True    
+        
+        return True    
             
 
 
@@ -120,62 +126,105 @@ class ImageWriter(Thread):
 class MainScreen(FloatLayout):
     def __init__(self, **kwargs):
         super(MainScreen, self).__init__(**kwargs)
-        self.background_image = Image(source='images/bg.jpg', size=self.size)
-        self.clock = Label(text='[color=0066ff]--:--:--[/color]', markup = True, font_size=100, pos=(-710, 450) , font_name='fonts/hemi_head_bd_it.ttf')
-        
-         
-        self.discOp1 = DiscOperation(pos=(300 , startYPos), size=(1300, 200), size_hint=(None, None))
-        self.discOp2 = DiscOperation(pos=(300 , startYPos - 230 * 1 ), size=(1300, 200), size_hint=(None, None))
-        self.discOp3 = DiscOperation(pos=(300 , startYPos - 230 * 2 ), size=(1300, 200), size_hint=(None, None))
-        self.discOp4 = DiscOperation(pos=(300 , startYPos - 230 * 3 ), size=(1300, 200), size_hint=(None, None))
-        
-        self.discOp1.targetDev = targetdDevices[0]
-        self.discOp2.targetDev = targetdDevices[1]
-        self.discOp3.targetDev = targetdDevices[2]
-        self.discOp4.targetDev = targetdDevices[3]
-
-        self.discOp1.masterImage = globalMasterImage
-        self.discOp2.masterImage = globalMasterImage
-        self.discOp3.masterImage = globalMasterImage
-        self.discOp4.masterImage = globalMasterImage
-
-        
-        self.statusBar = UpperStatusbar(pos=(20, 450), size=(1920-80, 160), size_hint=(None, None))
-        
+        self.background_image = Image(source='images/bg_d.jpg', size=self.size)
         self.add_widget(self.background_image)
-        self.add_widget(self.discOp1)
-        self.add_widget(self.discOp2)
-        self.add_widget(self.discOp3)
-        self.add_widget(self.discOp4)
+
+
+        self.operations = []
+
+        for index, device in enumerate(targetdDevices):
+            yPos = startYPos
+            xPoz = 3
+            if(index!=0 and index << 4):
+                yPos = startYPos - 60 * index
+    
+            if(index >= 4):
+                yPos = startYPos - 60 * (index - 4)
+                xPoz = 3 + 3 + 250
+
+
+            discOp = DiscOperation(pos=(xPoz , yPos), size=(500, 100), size_hint=(None, None))
+            discOp.targetDev = device
+            discOp.masterImage = globalMasterImage
+            self.operations.append(discOp)
+            self.add_widget(self.operations[index])
+
+            print(f"Index: {index}, Device: {device}")
+
+
+        self.statusBar = UpperStatusbar(pos=(3, 245), size=(1024-10, 100), size_hint=(None, None))
         
-        #self.add_widget(self.clock)
         self.add_widget(self.statusBar)
 
-
         Clock.schedule_interval(lambda dt: self.update_time(), 1)
+
+        self.server, self.server_thread = start_server_in_thread(8080, self)
+
     
+    def remCtrlCB(self, arg):
+        #['', 'slot', '0', 'status']
+        reguest = arg.split("/")
+        print("CB arg-", reguest )
+        #return self.statusBar.runStatus
+        if(reguest[1] == "slot"):
+            if(reguest[3] == "status"):
+                slotNum = int(reguest[2])
+                if(slotNum > len(self.operations)-1):
+                    return "slot not exist"
+                return self.operations[slotNum].slotCurrentStatus
+            elif(reguest[3] == "run"):
+                slotNum = int(reguest[2])
+                if(slotNum > len(self.operations)-1):
+                    return "slot not exist"
+                self.operations[slotNum].runProc()
+                return "ok"  
+
+            else:
+                return "incorrect slot command"
+        elif(reguest[1] == "config"):
+            return "ok"
+
+        else:
+            return "incorrect request"
+
+
+        
+
+
+
+
     def update_time(self):
         dateTime = datetime.now().strftime('%H:%M:%S')
-        #self.clock.text='[color=0066ff]'+datetime.now().strftime('%H:%M:%S')+'[/color]'
-        passedTotal = self.discOp1.passed+self.discOp2.passed+self.discOp3.passed+self.discOp4.passed
-        failedTotal = self.discOp1.failed+self.discOp2.failed+self.discOp3.failed+self.discOp4.failed
+        passedTotal = 0
+        failedTotal = 0
+        
+        for operation in self.operations:
+            passedTotal += operation.passed
+            failedTotal += operation.failed
+
         yieldTotal = 100
         if ((passedTotal + failedTotal) != 0):
             yieldTotal = (passedTotal / (passedTotal + failedTotal))*100
-        
 
-       
         self.statusBar.timeLbl = f'[color=0066ff]{dateTime}[/color]'
         self.statusBar.runStatus = f"[color={statusColor['pass']}]Passed: {passedTotal};[/color]"
         self.statusBar.runStatus += f"\n[color={statusColor['fail']}]Failed: {failedTotal};[/color]"
         self.statusBar.runStatus += f"\n[color={statusColor['yield']}]Yield: {yieldTotal:.1f};[/color]"
 
+    def stop_server(self):
+        if self.server:
+            self.server.shutdown()
+            self.server_thread.join()
 
 
 class BoxApp(App):
     def build(self):
-        screen = MainScreen()
-        return screen
+        self.screen = MainScreen()
+        return self.screen
+    
+    def on_stop(self):
+        self.screen.stop_server()
+
 
 if __name__ == '__main__':
     BoxApp().run()

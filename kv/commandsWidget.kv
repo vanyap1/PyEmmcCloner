@@ -1,62 +1,58 @@
 <DiscOperation>:
     size_hint: (None, None)
-    width: 1300
-    height: 200
-    canvas:
+    width: 500
+    height: 100
+    canvas.before:
+        Color:
+            rgba: 1, 1, 1, 0.2  # Білий колір з прозорістю 20%
         Rectangle:
-            source: 'images/bgWg.png'
-            
             size: self.size
-        BorderImage:
-            source: 'images/shadow32.png'
-            border: (30,30,36,36)
-            size: (self.width + 56, self.height + 56)
-            pos: (-28, -28)
-    FloatLayout:
-        Button:
-            id: startBtn
-            text: root.btnText
-            size: 150, 150
-            size_hint: None, None
-            font_size: 38
-            #background_normal: 'images/disk.png'
-            #background_down: 'images/diskgs.png'
-            pos: [25, 25]  # Відносно self.discOp
-            on_press: root.runProc(root.targetDev, root.masterImage)
+            pos: self.pos
+    
+    Button:
+        id: startBtn
+        text: root.btnText
+        size: 70, 70
+        size_hint: None, None
+        font_size: 24
+        #background_normal: 'images/disk.png'
+        #background_down: 'images/diskgs.png'
+        pos: (self.parent.pos[0]+15, self.parent.pos[1]+15)
+        on_press: root.runProc(root.targetDev, root.masterImage)
+    
+    Label:                      #Status bar
+        text: root.label_text
+        size_hint: None, None
+        font_size: 14
+        markup: True
+        width: self.parent.width-100
+        pos: (self.parent.pos[0]+100, self.parent.pos[1]+25)  # Відносно self.discOp
+        halign: 'left'
+        valign: 'middle'
+        text_size: self.width, None
 
-        Label:                      #Status bar
-            text: root.label_text
-            size_hint: None, None
-            font_size: 28
-            markup: True
-            width: 800
-            pos: [250, 75]  # Відносно self.discOp
-            halign: 'left'
-            valign: 'middle'
-            text_size: self.width, None
-        
-        Label:                      #Pass/Fail result counter bar
-            text: root.slotStatusCounter
-            size_hint: None, None
-            font_size: 16
-            markup: True
-            width: 800
-            pos: [250, -10]  # Відносно self.discOp
-            halign: 'left'
-            valign: 'middle'
-            text_size: self.width, None
-
-
-        ProgressBar:
-            size_hint: None, None
-            width: 800
-            #height: 150
-            pos: [250, 25]  # Відносно self.discOp
-            max: 100
-            value: root.progresBarVal    
-        Image:
-            id: statusLbl
-            source: root.statusIcon
-            size_hint: None, None
-            size: 100, 100
-            pos: [1150, 25]
+    Label:                      #Pass/Fail result counter bar
+        text: root.slotStatusCounter
+        size_hint: None, None
+        font_size: 16
+        markup: True
+        width: self.parent.width-100
+        pos: (self.parent.pos[0]+100, self.parent.pos[1]-25)  # Відносно self.discOp
+        halign: 'left'
+        valign: 'middle'
+        text_size: self.width, None
+    
+    ProgressBar:
+        size_hint: None, None
+        width: self.parent.width-120
+        #height: 150
+        pos: (self.parent.pos[0]+100, self.parent.pos[1])  # Відносно self.discOp
+        max: 100
+        value: root.progresBarVal   
+    
+    #Image:
+    #    id: statusLbl
+    #    source: root.statusIcon
+    #    size_hint: None, None
+    #    size: 100, 100
+    #    pos: [1150, 25]

@@ -1,7 +1,7 @@
 <UpperStatusbar>:
     size_hint: (None, None)
-    width: 1920-80
-    height: 160
+    width: 1024-20
+    height: 100
     canvas.before:
         Color:
             rgba: 1, 1, 1, 0.2  # Білий колір з прозорістю 50%
@@ -12,7 +12,7 @@
     Label:                      
         text: root.timeLbl
         size_hint: None, None
-        font_size: 100
+        font_size: 64
         font_name: 'fonts/hemi_head_bd_it.ttf'
         markup: True
         width: self.parent.width
@@ -25,12 +25,12 @@
     Label:                      
         text: root.runStatus
         size_hint: None, None
-        font_size: 32
+        font_size: 22
         font_name: 'fonts/hemi_head_bd_it.ttf'
         markup: True
         width: self.parent.width
         height: self.parent.height
-        pos: (self.parent.pos[0] + 1600, self.parent.pos[1])
+        pos: (self.parent.pos[0] + 840, self.parent.pos[1])
         halign: 'left'
         valign: 'middle'
         text_size: self.size    
