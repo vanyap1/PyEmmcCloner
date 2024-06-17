@@ -28,9 +28,9 @@ from kivy.core.window import Window
 from kivy.factory import Factory
 
 remCtrlPort = 8080
-targetdDevices = ["SDF", "SDx","SDx","SDx","SDx", "SDW"]
+targetdDevices = ["SDF", "SDG","SDC","SDx","SDx", "SDW"]
 Result = namedtuple('Result', ['passed', 'failed'])
-masterImagePath = "/home/vanya/"
+masterImagePath = "../"
 
 statusColor = {
     "pass": "00ff00",
