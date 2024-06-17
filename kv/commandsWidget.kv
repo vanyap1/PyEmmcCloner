@@ -18,7 +18,7 @@
         #background_normal: 'images/disk.png'
         #background_down: 'images/diskgs.png'
         pos: (self.parent.pos[0]+15, self.parent.pos[1]+15)
-        on_press: root.runProc(root.targetDev, root.masterImage)
+        on_press: root.runProc()
     
     Label:                      #Status bar
         text: root.label_text
@@ -50,6 +50,29 @@
         max: 100
         value: root.progresBarVal   
     
+    Label:                      #image name
+        text: root.masterImage
+        size_hint: None, None
+        font_size: 12
+        markup: True
+        width: self.parent.width-100
+        pos: (self.parent.pos[0]+380, self.parent.pos[1]-35)  # Відносно self.discOp
+        halign: 'left'
+        valign: 'middle'
+        text_size: self.width, None
+
+    Label:                      #Slot name
+        text: root.slotName
+        size_hint: None, None
+        font_size: 24
+        font_name: 'fonts/hemi_head_bd_it.ttf'
+        markup: True
+        width: self.parent.width-100
+        pos: (self.parent.pos[0]+430, self.parent.pos[1]+30)  # Відносно self.discOp
+        halign: 'left'
+        valign: 'middle'
+        text_size: self.width, None
+
     #Image:
     #    id: statusLbl
     #    source: root.statusIcon

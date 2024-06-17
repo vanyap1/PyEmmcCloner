@@ -21,6 +21,47 @@
         halign: 'left'
         valign: 'middle'
         text_size: self.size
+    
+    Label:                                          #Master image label info
+        text: root.masterImage
+        size_hint: None, None
+        font_size: 22
+        font_name: 'fonts/hemi_head_bd_it.ttf'
+        markup: True
+        width: self.parent.width
+        height: self.parent.height
+        pos: (self.parent.pos[0] + 300, self.parent.pos[1]+30)
+        halign: 'left'
+        valign: 'middle'
+        text_size: self.size 
+
+    Label:                                          #Controll source label info
+        text: root.ctrlType
+        size_hint: None, None
+        font_size: 22
+        font_name: 'fonts/hemi_head_bd_it.ttf'
+        markup: True
+        width: self.parent.width
+        height: self.parent.height
+        pos: (self.parent.pos[0] + 300, self.parent.pos[1])
+        halign: 'left'
+        valign: 'middle'
+        text_size: self.size 
+
+    Label:                                          #IP, Host info lable
+        text: root.ipAddr
+        size_hint: None, None
+        font_size: 22
+        font_name: 'fonts/hemi_head_bd_it.ttf'
+        markup: True
+        width: self.parent.width
+        height: self.parent.height
+        pos: (self.parent.pos[0] + 300, self.parent.pos[1]-30)
+        halign: 'left'
+        valign: 'middle'
+        text_size: self.size 
+
+
 
     Label:                      
         text: root.runStatus

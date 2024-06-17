@@ -3,7 +3,7 @@ import subprocess
 import time
 import shlex
 import pty
-import os
+import os, socket, re
 from kivy.uix.button import Button
 from kivy.uix.label import Label
 from kivy.uix.floatlayout import FloatLayout
@@ -27,10 +27,10 @@ from remoteCtrl import start_server_in_thread
 from kivy.core.window import Window
 from kivy.factory import Factory
 
-globalMasterImage = "/home/vanya/master.img"
-targetdDevices = ["SDC", "SDx","SDx","SDx","SDx", "SDW"]
+remCtrlPort = 8080
+targetdDevices = ["SDF", "SDx","SDx","SDx","SDx", "SDW"]
 Result = namedtuple('Result', ['passed', 'failed'])
-
+masterImagePath = "/home/vanya/"
 
 statusColor = {
     "pass": "00ff00",
@@ -38,7 +38,11 @@ statusColor = {
     "yield": "ffbf00",
     "terminated": "ffff00",
     "error": "0000ff",
-    "pending": "00ffff"
+    "pending": "00ffff",
+    "green": "00ff00",
+    "red": "ff0000",
+    "yellow": "ffbf00"
+
 }
 
 Builder.load_file('kv/commandsWidget.kv')
@@ -52,6 +56,16 @@ startYPos = 188             #Functional block
 class UpperStatusbar(Screen):
     timeLbl = StringProperty("System idle")
     runStatus = StringProperty("")
+    masterImage = StringProperty("image not set")
+    ctrlType = StringProperty("--")
+    ipAddr = StringProperty(f"none /:{remCtrlPort} ")
+
+    def setLabel(self, param):
+        self.masterImage = param
+
+    def setColor(self, text, color):
+        return f"[color={color}]{text}[/color]"
+    
 
 
 class DiscOperation(Screen):
@@ -65,6 +79,11 @@ class DiscOperation(Screen):
     masterImage = StringProperty("none")
     failed = NumericProperty(0)
     passed = NumericProperty(0)
+    slotName = StringProperty("")
+
+    def setMasterImage(self, image):
+        self.masterImage = image
+        self.ststusBar.setLabel(image)
 
 
     def runProc(self):
@@ -80,13 +99,16 @@ class ImageWriter(Thread):
         self.main_loop = main_loop_instance
         self.devName = devName
         self.masterImage = masterImage
-
+        #self.main_loop.progresBarVal
+        
+        
         Thread.__init__(self)
         self.daemon = True
         self.start()
     
     def run(self):
-        cmd = f'dd if=/home/vanya/master.img of=/dev/{self.devName.lower()} bs=4M status=progress' #count=125 
+        imageSize = os.path.getsize(f"{masterImagePath}{self.masterImage}")
+        cmd = f'dd if={masterImagePath}{self.masterImage} of=/dev/{self.devName.lower()} bs=4M status=progress' #count=125 
         master_fd, slave_fd = pty.openpty()
         process = subprocess.Popen(shlex.split(cmd), stdout=slave_fd, stderr=subprocess.STDOUT, close_fds=True)
         os.close(slave_fd)
@@ -94,7 +116,11 @@ class ImageWriter(Thread):
             try:
                 output = os.read(master_fd, 1024).decode()
                 if output:
-                    print(output, end='')
+                    print(output)
+                    match = re.search(r'\d+', output)
+                    if match:
+                        bytesWrite = int(match.group())
+                        self.main_loop.progresBarVal = int((bytesWrite / imageSize) * 100)                     
                     self.main_loop.label_text = f"[color={statusColor['pending']}]{output}[/color]"
                     self.main_loop.slotCurrentStatus = f"progress:{output}"
             except OSError:
@@ -126,12 +152,12 @@ class ImageWriter(Thread):
 class MainScreen(FloatLayout):
     def __init__(self, **kwargs):
         super(MainScreen, self).__init__(**kwargs)
+        self.masterImage = "master.img"
         self.background_image = Image(source='images/bg_d.jpg', size=self.size)
         self.add_widget(self.background_image)
 
 
         self.operations = []
-
         for index, device in enumerate(targetdDevices):
             yPos = startYPos
             xPoz = 3
@@ -145,7 +171,7 @@ class MainScreen(FloatLayout):
 
             discOp = DiscOperation(pos=(xPoz , yPos), size=(500, 100), size_hint=(None, None))
             discOp.targetDev = device
-            discOp.masterImage = globalMasterImage
+            discOp.masterImage = self.masterImage
             self.operations.append(discOp)
             self.add_widget(self.operations[index])
 
@@ -153,17 +179,22 @@ class MainScreen(FloatLayout):
 
 
         self.statusBar = UpperStatusbar(pos=(3, 245), size=(1024-10, 100), size_hint=(None, None))
+        self.statusBar.ctrlType = self.setColor("LOCAL" , statusColor['green'])
+        self.statusBar.masterImage = self.setColor(self.masterImage , statusColor['yellow'])
         
+        self.statusBar.ipAddr = self.setColor(f"{self.get_ip_addresses()}:{remCtrlPort}", statusColor['yellow'])
+       
+
         self.add_widget(self.statusBar)
 
         Clock.schedule_interval(lambda dt: self.update_time(), 1)
 
-        self.server, self.server_thread = start_server_in_thread(8080, self)
+        self.server, self.server_thread = start_server_in_thread(remCtrlPort, self)
 
     
     def remCtrlCB(self, arg):
         #['', 'slot', '0', 'status']
-        reguest = arg.split("/")
+        reguest = arg.lower().split("/")
         print("CB arg-", reguest )
         #return self.statusBar.runStatus
         if(reguest[1] == "slot"):
@@ -178,19 +209,61 @@ class MainScreen(FloatLayout):
                     return "slot not exist"
                 self.operations[slotNum].runProc()
                 return "ok"  
-
+            elif(reguest[3] == "name"):
+                slotNum = int(reguest[2])
+                if(reguest[4] == "clr"):
+                    self.operations[slotNum].slotName = ""
+                else:    
+                    self.operations[slotNum].slotName = self.setColor(reguest[4].upper() , statusColor['green'])
+                return "ok" 
             else:
-                return "incorrect slot command"
+                return "wrong slot command"
         elif(reguest[1] == "config"):
+            if(reguest[2] == "image"):
+                if(os.path.isfile(f"{masterImagePath}{reguest[3]}")):
+                    self.masterImage = reguest[3]
+                    self.statusBar.masterImage = self.setColor(self.masterImage , statusColor['green'])
+                    for op in self.operations:
+                        op.masterImage = self.masterImage
+                    return "ok"    
+                else:
+                    return "err; this image does not exist"
+            elif(reguest[2] == "image?"):      
+                return self.masterImage
+            
+            elif(reguest[2] == "rem"): 
+                if(reguest[3] == "true"):
+                    self.statusBar.ctrlType = self.setColor("REMOTE" , statusColor['red'])
+                    for op in self.operations:
+                        op.ids.startBtn.disabled = True
+                elif(reguest[3] == "false"):
+                    self.statusBar.ctrlType = self.setColor("LOCAL" , statusColor['green'])
+                    for op in self.operations:
+                        op.ids.startBtn.disabled = False
+                else:
+                    return "wrong ctrl command"    
             return "ok"
 
         else:
             return "incorrect request"
 
 
+    
+    
+    
+    def setColor(self, text, color):
+        return f"[color={color}]{text}[/color]"
         
 
-
+    def get_ip_addresses(self):
+        result = subprocess.run(['ip', 'addr'], stdout=subprocess.PIPE, text=True)
+        ip_addresses = []
+        for line in result.stdout.split('\n'):
+            if 'inet ' in line and '127.0.0.1' not in line:
+                ip_address = line.split()[1].split('/')[0]
+                ip_addresses.append(ip_address)
+        res = ', '.join(ip_addresses)
+        return res
 
 
     def update_time(self):

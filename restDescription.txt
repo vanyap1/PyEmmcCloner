@@ -1,0 +1,20 @@
+http://localhost:8080 + command
+
+command  -
+
+command ID / slot number / operation code
+
+example:
+    slot related patameters:
+            /slot/0/run                 #Slot run process
+            /slot/0/status              #Get current slot status
+            /slot/0/name/S1             #(S1 - name, or clr to remove slot name)
+    global parameters:
+            /config/image?              #Get current image name
+            /config/image/imageName     #imageName - name of image master.img. Set new image as master. It's working only if file exist in working directory.
+            /config/rem/true
+                       /false           #Enable or disable screen buttons
+
+
+
+http://localhost:8080/slot/0/run   - Tris commad will run process in 0 index slot.
