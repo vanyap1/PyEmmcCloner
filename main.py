@@ -19,6 +19,8 @@ from kivy.properties import StringProperty, NumericProperty, BooleanProperty, Ob
 from datetime import datetime, date, timedelta
 from collections import namedtuple
 from remoteCtrl import start_server_in_thread
+from kivy.uix.popup import Popup
+
 
 
 
@@ -32,26 +34,51 @@ targetdDevices = ["SDF", "SDG","SDC","SDx","SDx", "SDW"]
 Result = namedtuple('Result', ['passed', 'failed'])
 masterImagePath = "../"
 
-statusColor = {
-    "pass": "00ff00",
-    "fail": "ff0000",
-    "yield": "ffbf00",
-    "terminated": "ffff00",
-    "error": "0000ff",
-    "pending": "00ffff",
-    "green": "00ff00",
-    "red": "ff0000",
-    "yellow": "ffbf00"
 
-}
+
+class Color():
+    passed = "00ff00"
+    failed = "ff0000"
+    #yield = "ffbf00"
+    terminated= "ffff00"
+    error = "0000ff"
+    pending ="00ffff"
+    green = "00ff00"
+    red = "ff0000"
+    yellow = "ffbf00"
+
 
 Builder.load_file('kv/commandsWidget.kv')
 Builder.load_file('kv/statusbar.kv')
-
+Builder.load_file('kv/masterImageCreator.kv')
 
 
 Window.size = (1024, 600)
 startYPos = 188             #Functional block
+
+class ImageCreator(Popup):
+    windowTitle = StringProperty("null")
+    cliStatusLine = StringProperty("null")
+    
+    def __init__(self, NewimageName=None, sourceDevise=None):
+        super().__init__()
+        self.NewimageName = NewimageName
+        self.sourceDevise = sourceDevise
+        self.windowTitle = f"Image creation: {self.NewimageName}; device: {self.sourceDevise}"
+        self.cliStatusLine = f"Press start to process. \nOld image '{self.NewimageName}' will be overwritwe if exist"
+        
+        if(NewimageName==None or sourceDevise==None):
+            self.cliStatusLine = self.setColor("Incorrect input parameters", Color.red)
+    
+    
+    def call_function(self):
+        self.cliStatusLine = "Here will placed a progress of creation status"
+
+    def setColor(self, text, color):
+        return f"[color={color}]{text}[/color]"
+
+
+
 
 class UpperStatusbar(Screen):
     timeLbl = StringProperty("System idle")
@@ -65,6 +92,12 @@ class UpperStatusbar(Screen):
 
     def setColor(self, text, color):
         return f"[color={color}]{text}[/color]"
+    
+    def imageCreateWindow(self):
+        popup = ImageCreator(NewimageName = "master.img", sourceDevise="sdk")
+        popup.open()
+        
+    
     
 
 
@@ -101,7 +134,6 @@ class ImageWriter(Thread):
         self.masterImage = masterImage
         #self.main_loop.progresBarVal
         
-        
         Thread.__init__(self)
         self.daemon = True
         self.start()
@@ -121,7 +153,7 @@ class ImageWriter(Thread):
                     if match:
                         bytesWrite = int(match.group())
                         self.main_loop.progresBarVal = int((bytesWrite / imageSize) * 100)                     
-                    self.main_loop.label_text = f"[color={statusColor['pending']}]{output}[/color]"
+                    self.main_loop.label_text = f"[color={Color.pending}]{output}[/color]"
                     self.main_loop.slotCurrentStatus = f"progress:{output}"
             except OSError:
                 break
@@ -129,11 +161,11 @@ class ImageWriter(Thread):
         process.wait()
         
         if process.returncode == 0:
-            self.main_loop.label_text = f"Process: [color={statusColor['pass']}]PASSED[/color]"
+            self.main_loop.label_text = f"Process: [color={Color.green}]PASSED[/color]"
             self.main_loop.passed += 1
             self.main_loop.slotCurrentStatus = "pass" 
         else:
-            self.main_loop.label_text = f"Process: [color={statusColor['fail']}]FAILED[/color]"
+            self.main_loop.label_text = f"Process: [color={Color.red}]FAILED[/color]"
             self.main_loop.failed += 1
             self.main_loop.slotCurrentStatus = "fail"
 
@@ -142,7 +174,7 @@ class ImageWriter(Thread):
             yieldVal = (self.main_loop.passed / (self.main_loop.failed + self.main_loop.passed))*100
         
         self.main_loop.ids.startBtn.disabled = False
-        self.main_loop.slotStatusCounter = f"[color={statusColor['pass']}]Passed: {self.main_loop.passed}[/color]; [color={statusColor['fail']}]Failed: {self.main_loop.failed}[/color]; Yield: {yieldVal:.1f}%"
+        self.main_loop.slotStatusCounter = f"[color={Color.green}]Passed: {self.main_loop.passed}[/color]; [color={Color.red}]Failed: {self.main_loop.failed}[/color]; Yield: {yieldVal:.1f}%"
         
         return True    
             
@@ -179,10 +211,10 @@ class MainScreen(FloatLayout):
 
 
         self.statusBar = UpperStatusbar(pos=(3, 245), size=(1024-10, 100), size_hint=(None, None))
-        self.statusBar.ctrlType = self.setColor("LOCAL" , statusColor['green'])
-        self.statusBar.masterImage = self.setColor(self.masterImage , statusColor['yellow'])
+        self.statusBar.ctrlType = self.setColor("LOCAL" , Color.green)
+        self.statusBar.masterImage = self.setColor(self.masterImage , Color.yellow)
         
-        self.statusBar.ipAddr = self.setColor(f"{self.get_ip_addresses()}:{remCtrlPort}", statusColor['yellow'])
+        self.statusBar.ipAddr = self.setColor(f"{self.get_ip_addresses()}:{remCtrlPort}", Color.yellow)
        
 
         self.add_widget(self.statusBar)
@@ -214,7 +246,7 @@ class MainScreen(FloatLayout):
                 if(reguest[4] == "clr"):
                     self.operations[slotNum].slotName = ""
                 else:    
-                    self.operations[slotNum].slotName = self.setColor(reguest[4].upper() , statusColor['green'])
+                    self.operations[slotNum].slotName = self.setColor(reguest[4].upper() , Color.green)
                 return "ok" 
             else:
                 return "wrong slot command"
@@ -222,7 +254,7 @@ class MainScreen(FloatLayout):
             if(reguest[2] == "image"):
                 if(os.path.isfile(f"{masterImagePath}{reguest[3]}")):
                     self.masterImage = reguest[3]
-                    self.statusBar.masterImage = self.setColor(self.masterImage , statusColor['green'])
+                    self.statusBar.masterImage = self.setColor(self.masterImage , Color.green)
                     for op in self.operations:
                         op.masterImage = self.masterImage
                     return "ok"    
@@ -233,11 +265,11 @@ class MainScreen(FloatLayout):
             
             elif(reguest[2] == "rem"): 
                 if(reguest[3] == "true"):
-                    self.statusBar.ctrlType = self.setColor("REMOTE" , statusColor['red'])
+                    self.statusBar.ctrlType = self.setColor("REMOTE" , Color.red)
                     for op in self.operations:
                         op.ids.startBtn.disabled = True
                 elif(reguest[3] == "false"):
-                    self.statusBar.ctrlType = self.setColor("LOCAL" , statusColor['green'])
+                    self.statusBar.ctrlType = self.setColor("LOCAL" , Color.green)
                     for op in self.operations:
                         op.ids.startBtn.disabled = False
                 else:
@@ -280,9 +312,9 @@ class MainScreen(FloatLayout):
             yieldTotal = (passedTotal / (passedTotal + failedTotal))*100
 
         self.statusBar.timeLbl = f'[color=0066ff]{dateTime}[/color]'
-        self.statusBar.runStatus = f"[color={statusColor['pass']}]Passed: {passedTotal};[/color]"
-        self.statusBar.runStatus += f"\n[color={statusColor['fail']}]Failed: {failedTotal};[/color]"
-        self.statusBar.runStatus += f"\n[color={statusColor['yield']}]Yield: {yieldTotal:.1f};[/color]"
+        self.statusBar.runStatus = f"[color={Color.green}]Passed: {passedTotal};[/color]"
+        self.statusBar.runStatus += f"\n[color={Color.red}]Failed: {failedTotal};[/color]"
+        self.statusBar.runStatus += f"\n[color={Color.yellow}]Yield: {yieldTotal:.1f};[/color]"
 
     def stop_server(self):
         if self.server:

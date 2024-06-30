@@ -1,0 +1,20 @@
+<ImageCreator>:
+    title: root.windowTitle
+    size_hint: None, None
+    size: 400, 200
+    auto_dismiss: False
+
+    BoxLayout:
+        orientation: 'vertical'
+        Label:
+            markup: True
+            text: root.cliStatusLine
+        BoxLayout:
+            size_hint_y: None
+            height: '40dp'
+            Button:
+                text: 'Terminate/Exit'
+                on_press: root.dismiss()
+            Button:
+                text: 'Start'
+                on_press: root.call_function()

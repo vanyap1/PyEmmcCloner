@@ -75,3 +75,13 @@
         halign: 'left'
         valign: 'middle'
         text_size: self.size    
+    
+    
+    Button:
+        text: "NewImg"
+        size: 100, 40
+        size_hint: None, None
+        pos: (self.parent.pos[0]+700, self.parent.pos[1]+50)
+        font_size: 24
+        on_release: root.imageCreateWindow()
+        
