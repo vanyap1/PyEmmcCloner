@@ -1,11 +1,9 @@
-from email.mime import image
 import subprocess
 import subprocess
 import time
 import shlex
 import pty
 import os, socket, re
-from urllib import request
 from kivy.uix.button import Button
 from kivy.uix.label import Label
 from kivy.uix.floatlayout import FloatLayout
@@ -22,7 +20,7 @@ from datetime import datetime, date, timedelta
 from collections import namedtuple
 from remoteCtrl import start_server_in_thread
 from kivy.uix.popup import Popup
-from kivy.config import Config
+
 
 
 
@@ -33,9 +31,12 @@ from kivy.factory import Factory
 
 remCtrlPort = 8080
 targetdDevices = ["SDF", "SDG","SDC","SDx","SDx", "SDW"]
-masterImageDev = "sdc"
 Result = namedtuple('Result', ['passed', 'failed'])
-masterImagePath = "/home/vanya/images/"
+masterImagePath = "../"
+
+
+Window.size = (1024, 600)
+startYPos = 188             #Functional block
 
 
 
@@ -56,9 +57,6 @@ Builder.load_file('kv/statusbar.kv')
 Builder.load_file('kv/masterImageCreator.kv')
 
 
-Window.size = (1024, 600)
-startYPos = 188             #Functional block
-
 class ImageCreator(Popup):
     windowTitle = StringProperty("null")
     cliStatusLine = StringProperty("null")
@@ -75,91 +73,10 @@ class ImageCreator(Popup):
     
     
     def call_function(self):
-        
         self.cliStatusLine = "Here will placed a progress of creation status"
-        self.ids.startBtn.disabled = True
-        self.readerProperty = ImageReader(self, masterImageDev, "master.img")
-        
-
-    def cancelationRequesr(self):
-        if hasattr(self, 'readerProperty'):
-            self.readerProperty.command = "cancel"
-        self.dismiss()
 
     def setColor(self, text, color):
         return f"[color={color}]{text}[/color]"
-    
-
-class ImageReader(Thread):
-    def __init__(self, parrentProcInstance, devName=None, newImageName=None):
-        self.parrentProc = parrentProcInstance
-        self.devName = devName
-        self.newImageName = newImageName
-        self.command = ""
-        self.status = "idle"
-        Thread.__init__(self)
-        self.daemon = True
-        self.start()
-    def cmd(self, command):
-        self.command = command
-
-
-    def run(self):
-        if(self.devName!=None and self.newImageName!=None):
-            self.parrentProc.cliStatusLine = "run"
-            newFilePath = f"{masterImagePath}{self.newImageName}"
-            backFilePath = f"{masterImagePath}back_{self.newImageName}"
-
-            cmd = f'dd if=/dev/{self.devName} of={newFilePath} bs=4M status=progress'# count=32' 
-            master_fd, slave_fd = pty.openpty()
-            process = subprocess.Popen(shlex.split(cmd), stdout=slave_fd, stderr=subprocess.STDOUT, close_fds=True)
-            os.close(slave_fd)
-            if(os.path.isfile(newFilePath)):
-                os.rename(newFilePath, backFilePath)
-            
-            if(self.checkDevFs(self.devName)):
-
-                self.parrentProc.cliStatusLine += "Disk is not insert"
-                return
-
-            while True:
-                try:
-                    output = os.read(master_fd, 256).decode()
-                    if output:
-                        print(output, self.command)
-                        self.parrentProc.cliStatusLine = output.strip()
-                        self.status = re.sub(r'[^\x20-\x7E]', '', output)
-                    if(self.command == "cancel"):
-                        break   
-                except OSError:
-                    pass
-                    #break
-                self.retcode = process.poll()
-                if self.retcode is not None:
-                    break
-            os.close(master_fd)
-            process.wait()
-            if(self.retcode == 0):
-                self.parrentProc.cliStatusLine += "\nOperation complete"
-                self.status = "pass"
-
-            else:
-                self.parrentProc.cliStatusLine += "\nOperation FAILED"
-                self.status = "error"
-        else:
-            self.parrentProc.cliStatusLine = "Invalid device name or image name"
-            self.status = "error; Invalid device name or image name"
-    
-    def getCurrentState(self):
-        return self.status
-    
-    def checkDevFs(self, device_path):
-        try:
-            result = subprocess.run(shlex.split(f"blkid {device_path}"), capture_output=True, text=True)
-            return bool(result.stdout.strip())
-        except Exception as e:
-            print(f"Помилка при перевірці файлових систем: {e}")
-            return False
 
 
 
@@ -178,14 +95,14 @@ class UpperStatusbar(Screen):
         return f"[color={color}]{text}[/color]"
     
     def imageCreateWindow(self):
-        popup = ImageCreator(NewimageName = "master.img", sourceDevise=masterImageDev)
+        popup = ImageCreator(NewimageName = "master.img", sourceDevise="sdk")
         popup.open()
         
     
     
 
 
-class DiscOperation(Screen):
+class DiskWriter(Screen):
     label_text = StringProperty("System idle")
     slotCurrentStatus = StringProperty("pending")
     progresBarVal = NumericProperty(0)
@@ -202,6 +119,7 @@ class DiscOperation(Screen):
         self.masterImage = image
         #self.statusBar.setLabel(image)
 
+
     def runProc(self):
         self.slotCurrentStatus = "awaiting"
         self.label_text = "Wait to finish process"
@@ -210,35 +128,27 @@ class DiscOperation(Screen):
         ImageWriter(self, self.targetDev, self.masterImage)
         
 
+
 class ImageWriter(Thread):
     def __init__(self, main_loop_instance, devName, masterImage):
         self.main_loop = main_loop_instance
         self.devName = devName
         self.masterImage = masterImage
-        self.main_loop.progresBarVal
+        #self.main_loop.progresBarVal
         
         Thread.__init__(self)
         self.daemon = True
         self.start()
     
     def run(self):
-        
-        try:
-            imageSize = os.path.getsize(f"{masterImagePath}{self.masterImage}")
-        except:
-            self.main_loop.label_text = f"[color={Color.red}]Incorrect image[/color]"
-            self.main_loop.slotCurrentStatus = f"progress:..."
-            self.main_loop.ids.startBtn.disabled = False
-            return
-        
-        cmd = f'dd if={masterImagePath}{self.masterImage} of=/dev/{self.devName.lower()} bs=4M status=progress'# count=32' 
+        imageSize = os.path.getsize(f"{masterImagePath}{self.masterImage}")
+        cmd = f'dd if={masterImagePath}{self.masterImage} of=/dev/{self.devName.lower()} bs=4M status=progress' #count=125 
         master_fd, slave_fd = pty.openpty()
         process = subprocess.Popen(shlex.split(cmd), stdout=slave_fd, stderr=subprocess.STDOUT, close_fds=True)
         os.close(slave_fd)
         while True:
             try:
-                
-                output = os.read(master_fd, 256).decode()
+                output = os.read(master_fd, 1024).decode()
                 if output:
                     print(output)
                     match = re.search(r'\d+', output)
@@ -263,13 +173,28 @@ class ImageWriter(Thread):
 
         if ((self.main_loop.failed + self.main_loop.passed) != 0):
             
-            self.yieldVal = (self.main_loop.passed / (self.main_loop.failed + self.main_loop.passed))*100
+            yieldVal = (self.main_loop.passed / (self.main_loop.failed + self.main_loop.passed))*100
         
         self.main_loop.ids.startBtn.disabled = False
-        self.main_loop.slotStatusCounter = f"[color={Color.green}]Passed: {self.main_loop.passed}[/color]; [color={Color.red}]Failed: {self.main_loop.failed}[/color]; Yield: {self.yieldVal:.1f}%"
+        self.main_loop.slotStatusCounter = f"[color={Color.green}]Passed: {self.main_loop.passed}[/color]; [color={Color.red}]Failed: {self.main_loop.failed}[/color]; Yield: {yieldVal:.1f}%"
         
-           
+        return True    
             
+class ImageReader(Thread):
+    def __init__(self, parrentProcInstance, devName=None, newImageName=None):
+        self.parrentProc = parrentProcInstance
+        self.devName = devName
+        self.newImageName = newImageName
+        #self.main_loop.progresBarVal
+        
+        Thread.__init__(self)
+        self.daemon = True
+        self.start()
+    
+    def run(self):
+        if(self.devName==None or self.newImageName==None):
+            return False
+        pass
 
 
 
@@ -295,7 +220,7 @@ class MainScreen(FloatLayout):
                 xPoz = 3 + 3 + 250
 
 
-            discOp = DiscOperation(pos=(xPoz , yPos), size=(500, 100), size_hint=(None, None))
+            discOp = DiskWriter(pos=(xPoz , yPos), size=(500, 100), size_hint=(None, None))
             discOp.targetDev = device
             discOp.masterImage = self.masterImage
             self.operations.append(discOp)
@@ -346,8 +271,8 @@ class MainScreen(FloatLayout):
                 return "wrong slot command"
         elif(reguest[1] == "config"):
             if(reguest[2] == "image"):
-                if(os.path.isfile(f"{masterImagePath}{reguest[3]}.img")):
-                    self.masterImage = f"{reguest[3]}.img"
+                if(os.path.isfile(f"{masterImagePath}{reguest[3]}")):
+                    self.masterImage = reguest[3]
                     self.statusBar.masterImage = self.setColor(self.masterImage , Color.green)
                     for op in self.operations:
                         op.masterImage = self.masterImage
@@ -367,42 +292,9 @@ class MainScreen(FloatLayout):
                     for op in self.operations:
                         op.ids.startBtn.disabled = False
                 else:
-                    return "err; twrong ctrl command"    
+                    return "wrong ctrl command"    
             return "ok"
 
-        elif(reguest[1] == "imgmaker" and len(reguest) >= 3):
-            if(len(reguest[3]) < 3 and reguest[2] != "status"):
-                return f"err; filename too short - {reguest[3]}. "
-                
-            if(reguest[2] == "make"):
-                self.readerProperty = ImageReader(self, masterImageDev, f"{reguest[3]}.img")
-                return "ok"
-            elif(reguest[2] == "status"):
-                if hasattr(self, 'readerProperty'):
-                    return self.readerProperty.getCurrentState()
-                else:
-                    return "idle"
-            
-            elif(reguest[2] == "check"):
-                if(os.path.isfile(f"{masterImagePath}{reguest[3]}.img")):
-                    return "ok"
-                else:
-                    return "err; file does not exist"
-                
-            elif(reguest[2] == "remove"):
-                try:
-                    os.remove(f"{masterImagePath}{reguest[3]}.img")
-                    return "ok"
-                except:
-                    return "err; file remove error"
-            
-            else:
-                return "err; wrong imgmaker command"
-            
-            #ImageReader
-        
-        
-        
         else:
             return "incorrect request"
 

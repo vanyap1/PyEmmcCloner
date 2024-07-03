@@ -1,7 +1,7 @@
 <ImageCreator>:
     title: root.windowTitle
     size_hint: None, None
-    size: 400, 200
+    size: 440, 250
     auto_dismiss: False
 
     BoxLayout:
@@ -13,8 +13,10 @@
             size_hint_y: None
             height: '40dp'
             Button:
+                id: stopBtn
                 text: 'Terminate/Exit'
-                on_press: root.dismiss()
+                on_press: root.cancelationRequesr() #root.dismiss()
             Button:
+                id: startBtn
                 text: 'Start'
                 on_press: root.call_function()
