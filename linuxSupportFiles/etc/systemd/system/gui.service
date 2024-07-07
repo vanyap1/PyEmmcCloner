@@ -1,0 +1,15 @@
+[Unit]
+Description=Run GUI after x envirement, network and 40 seconds aditional time 
+After=graphical.target network.target
+
+[Service]
+Type=simple
+User=pi
+WorkingDirectory=/home/pi
+Environment=DISPLAY=:0
+ExecStartPre=/bin/sleep 40
+ExecStart=/usr/bin/python3 /home/pi/gui/main.py
+Restart=always
+
+[Install]
+WantedBy=graphical.target
