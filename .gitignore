@@ -1,2 +1,3 @@
 __pycache__/
-imgBuilder/imgParts/
+imgBuilder/imgParts/*
+!imgBuilder/imgParts/*.txt
