@@ -32,8 +32,8 @@ from kivy.core.window import Window
 from kivy.factory import Factory
 
 remCtrlPort = 8080
-targetdDevices = ["SDF", "SDG","SDC","SDx","SDx", "SDW"]
-masterImageDev = "sdc"
+targetdDevices = ["mmca", "mmcb","mmcd","mmce"]
+masterImageDev = "mmca"
 Result = namedtuple('Result', ['passed', 'failed'])
 masterImagePath = "/home/vanya/images/"
 
@@ -89,6 +89,45 @@ class ImageCreator(Popup):
     def setColor(self, text, color):
         return f"[color={color}]{text}[/color]"
     
+class ImageBuilder(Thread):
+    def __init__(self, parrentProcInstance, devicePath,  rootFSzip=None):
+        self.parrentProc = parrentProcInstance
+        self.devicePath = "/dev/"+devicePath
+        self.rootFSzip = rootFSzip
+        self.status = "idle"
+        Thread.__init__(self)
+        self.daemon = True
+        self.start()
+
+    def run(self):
+        output = subprocess.check_output(['readlink', '-f', self.devicePath], text=True).strip()
+        device_path = re.sub(r'\d+$', '', output)
+        print(device_path)
+        if os.path.exists(device_path):
+            cmd= f' imgBuilder/mk_disk.sh -a imgBuilder/imgParts/{self.rootFSzip} -d {device_path} -b UNLOCK'
+            print(cmd)
+            process = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+
+            while True:
+                output = process.stdout.readline()
+                if output == '' and process.poll() is not None:
+                    break
+                if output:
+                    self.status = str(output.strip())
+                    print(output.strip())
+            
+            rc = process.poll()
+            self.status = "completed" if rc == 0 else "error"
+
+            
+        else:
+            print(f"Device  {device_path} not found.")
+            self.status = "error; Device not found"
+            return
+    def getCurrentState(self):
+        return self.status
+        
+
 
 class ImageReader(Thread):
     def __init__(self, parrentProcInstance, devName=None, newImageName=None):
@@ -374,6 +413,11 @@ class MainScreen(FloatLayout):
             if(len(reguest[3]) < 3 and reguest[2] != "status"):
                 return f"err; filename too short - {reguest[3]}. "
                 
+            if(reguest[2] == "build"):
+                self.readerProperty = ImageBuilder(self, masterImageDev, reguest[3])
+                return "ok"
+            
+
             if(reguest[2] == "make"):
                 self.readerProperty = ImageReader(self, masterImageDev, f"{reguest[3]}.img")
                 return "ok"

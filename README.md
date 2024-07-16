@@ -116,3 +116,8 @@ Check the status of the service to ensure it is running:
 ```bash
 sudo systemctl status gui.service
 ```
+need to add current user to visudo 
+
+```bash 
+pi ALL=(ALL) NOPASSWD: ALL
+```
