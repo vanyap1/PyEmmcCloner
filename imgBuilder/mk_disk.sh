@@ -25,7 +25,6 @@
 
 EXEC_PREFIX='sudo '
 
-
 # RootFS archive filename
 ROOT_FS_ARCH=""
 # Extension script

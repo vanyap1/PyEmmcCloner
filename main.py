@@ -35,7 +35,7 @@ remCtrlPort = 8080
 targetdDevices = ["mmca", "mmcb","mmcd","mmce"]
 masterImageDev = "mmca"
 Result = namedtuple('Result', ['passed', 'failed'])
-masterImagePath = "/home/vanya/images/"
+masterImagePath = "/home/pi/images/"
 
 
 
@@ -105,12 +105,14 @@ class ImageBuilder(Thread):
         print(device_path)
         if os.path.exists(device_path):
             cmd= f' imgBuilder/mk_disk.sh -a imgBuilder/imgParts/{self.rootFSzip} -d {device_path} -b UNLOCK'
+            #print("Run")
             print(cmd)
             process = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
 
             while True:
                 output = process.stdout.readline()
                 if output == '' and process.poll() is not None:
+                    print("Break")
                     break
                 if output:
                     self.status = str(output.strip())
@@ -148,8 +150,10 @@ class ImageReader(Thread):
             self.parrentProc.cliStatusLine = "run"
             newFilePath = f"{masterImagePath}{self.newImageName}"
             backFilePath = f"{masterImagePath}back_{self.newImageName}"
-
-            cmd = f'dd if=/dev/{self.devName} of={newFilePath} bs=4M status=progress'# count=32' 
+            output = subprocess.check_output(['readlink', '-f', f"/dev/{self.devName}"], text=True).strip()
+            device_path = re.sub(r'\d+$', '', output)            
+            print(device_path)
+            cmd = f'dd if={device_path} of={newFilePath} status=progress'#bs=4M count=32' 
             master_fd, slave_fd = pty.openpty()
             process = subprocess.Popen(shlex.split(cmd), stdout=slave_fd, stderr=subprocess.STDOUT, close_fds=True)
             os.close(slave_fd)
@@ -269,8 +273,16 @@ class ImageWriter(Thread):
             self.main_loop.slotCurrentStatus = f"progress:..."
             self.main_loop.ids.startBtn.disabled = False
             return
-        
-        cmd = f'dd if={masterImagePath}{self.masterImage} of=/dev/{self.devName.lower()} bs=4M status=progress'# count=32' 
+
+
+
+        output = subprocess.check_output(['readlink', '-f', f'/dev/{self.devName.lower()}'], text=True).strip()
+        device_path = re.sub(r'\d+$', '', output)
+        print(device_path)
+
+        print(f"drive location - /dev/{self.devName.lower()}")
+
+        cmd = f'dd if={masterImagePath}{self.masterImage} of={device_path} status=progress'# bs=4M count=32' 
         master_fd, slave_fd = pty.openpty()
         process = subprocess.Popen(shlex.split(cmd), stdout=slave_fd, stderr=subprocess.STDOUT, close_fds=True)
         os.close(slave_fd)
