@@ -231,12 +231,25 @@ class SlotWidget(Screen):
     def emmcConnInitConnection(self, destIf):
         print(destIf, "CONN")
         if destIf == "copi":
-            self.gpioController.pinWrite(self.okLED, True)
-            self.gpioController.pinWrite(self.errLED, False)
+            self.gpioController.pinWrite(self.okLED, True)          #
+            self.gpioController.pinWrite(self.errLED, False)        #
+            self.gpioController.pinWrite(self.emmcCD, False) 
+            time.sleep(1.5)
+
+            self.gpioController.pinWrite(self.emmcChRel, True)      #
+            self.gpioController.pinWrite(self.muxCtrl, False)       #
+            
+
             return True
         elif destIf == "crpi":
-            self.gpioController.pinWrite(self.okLED, False)
-            self.gpioController.pinWrite(self.errLED, True)
+            
+            self.gpioController.pinWrite(self.okLED, False)         #
+            self.gpioController.pinWrite(self.errLED, True)         #
+
+            self.gpioController.pinWrite(self.emmcChRel, False)      #
+            self.gpioController.pinWrite(self.muxCtrl, True)       #
+            time.sleep(.5)
+            self.gpioController.pinWrite(self.emmcCD, True)        #
             return True
         else:
             return False
