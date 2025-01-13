@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="uk">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Command interface</title>
+    <link rel="stylesheet" href="styles.css">
+    <script>
+        function sendCommand(command) {
+            const commandText = document.getElementById('commandDropdown').value;
+            const slotName = document.getElementById('slotsDropdown').value;
+            let url = '/cmd:';
+            if (slotName) {
+                url += slotName + '/';
+            }
+            url += command;
+            fetch(url)
+                .then(response => response.text())
+                .then(data => {
+                    document.getElementById('result').innerText = data;
+                })
+                .catch(error => {
+                    document.getElementById('result').innerText = 'Error: ' + error;
+                });
+        }
+
+        function onOkButtonClick() {
+            const command = document.getElementById('commandInput').value;
+            const commandText = document.getElementById('commandDropdown').value;
+
+            if (commandText === 'cmd') {
+                if (command) {
+                    sendCommand(commandText + '=' + command);
+                    return;
+                } else {
+                    sendCommand(commandText);
+                    return;
+                }
+            } else {
+                sendCommand(commandText);
+                return;
+            }
+        }
+        function onButtonClick(buttonId) {
+            sendCommand(buttonId + '=pressed');
+        }
+    </script>
+</head>
+
+<body>
+    <div class="container">
+        <h1>Command interface</h1>
+        <div class="input-group">
+            <select id="slotsDropdown">
+                <option value="">none</option>
+                <option value="slot1">slot1</option>
+                <option value="slot2">slot2</option>
+            </select>
+            <select id="commandDropdown">
+                <option value="status">status</option>
+                <option value="cmd">cmd</option>
+                <option value="run">run</option>
+                <option value="stop">stop</option>
+                <option value="crpi">connRPI</option>
+                <option value="copi">connOPI</option>
+                
+            </select>
+            <input type="text" id="commandInput" placeholder="Введіть команду">
+            <button onclick="onOkButtonClick()">EXEC</button>
+        </div>
+
+
+        <div class="result-group">
+            <h2>Result:</h2>
+            <pre id="result">No data</pre>
+        </div>
+        <div class="button-group">
+            <button onclick="onButtonClick('btn0')">Button 0</button>
+            <button onclick="onButtonClick('btn1')">Button 1</button>
+            <button onclick="onButtonClick('btn2')">Button 2</button>
+        </div>
+    </div>
+</body>
+
+</html>
