@@ -1,7 +1,7 @@
 <SlotWidget>:
     size_hint: (None, None)
-    width: 500
-    height: 100
+    width: 170
+    height: 160
     canvas.before:
         Color:
             rgba: 1, 1, 1, 0.2  # Білий колір з прозорістю 20%
@@ -9,68 +9,57 @@
             size: self.size
             pos: self.pos
     
-    Button:
-        id: startBtn
-        text: root.btnText
-        size: 70, 70
-        size_hint: None, None
-        font_size: 24
-        #background_normal: 'images/disk.png'
-        #background_down: 'images/diskgs.png'
-        pos: (self.parent.pos[0]+15, self.parent.pos[1]+15)
-        on_press: root.runProc()
     
     Label:                      #Status bar
         text: root.label_text
         size_hint: None, None
-        font_size: 14
+        font_size: 12
         markup: True
-        width: self.parent.width-100
-        pos: (self.parent.pos[0]+100, self.parent.pos[1]+25)  # Відносно self.discOp
-        halign: 'left'
+        width: self.parent.width
+        pos: (self.parent.pos[0]+5, self.parent.pos[1]+35)  # Відносно self.discOp
+        halign: 'center'
         valign: 'middle'
         text_size: self.width, None
+
+    Label:                      #Short status label
+        text: root.slotStateusLabel
+        size_hint: None, None
+        font_size: 28
+        markup: True
+        width: self.parent.width
+        pos: (self.parent.pos[0]+5, self.parent.pos[1]+75)  # Відносно self.discOp
+        text_size: self.width, None
+        halign: 'center'
+        valign: 'middle'    
 
     Label:                      #Pass/Fail result counter bar
         text: root.slotStatusCounter
         size_hint: None, None
         font_size: 16
         markup: True
-        width: self.parent.width-100
-        pos: (self.parent.pos[0]+100, self.parent.pos[1]-25)  # Відносно self.discOp
+        width: self.parent.width
+        pos: (self.parent.pos[0]+10, self.parent.pos[1]-15)  # Відносно self.discOp
         halign: 'left'
         valign: 'middle'
         text_size: self.width, None
     
     ProgressBar:
         size_hint: None, None
-        width: self.parent.width-120
+        width: self.parent.width - 30
         #height: 150
-        pos: (self.parent.pos[0]+100, self.parent.pos[1])  # Відносно self.discOp
+        pos: (self.parent.pos[0]+15, self.parent.pos[1]+20)  # Відносно self.discOp
         max: 100
         value: root.progresBarVal   
     
-    Label:                      #image name
-        text: root.masterImage
-        size_hint: None, None
-        font_size: 12
-        markup: True
-        width: self.parent.width-100
-        pos: (self.parent.pos[0]+380, self.parent.pos[1]-35)  # Відносно self.discOp
-        halign: 'left'
-        valign: 'middle'
-        text_size: self.width, None
 
     Label:                      #Slot name
         text: root.slotName
         size_hint: None, None
-        font_size: 24
+        font_size: 55
         font_name: 'fonts/hemi_head_bd_it.ttf'
         markup: True
-        width: self.parent.width-100
-        pos: (self.parent.pos[0]+430, self.parent.pos[1]+30)  # Відносно self.discOp
-        halign: 'left'
-        valign: 'middle'
+        width: self.parent.width
+        pos: (self.parent.pos[0]+120, self.parent.pos[1]-20)  # Відносно self.discOp
         text_size: self.width, None
 
     #Image:

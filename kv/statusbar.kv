@@ -1,7 +1,7 @@
 <UpperStatusbar>:
     size_hint: (None, None)
-    width: 1024-20
-    height: 100
+    #width: 800-40
+    #height: 80
     canvas.before:
         Color:
             rgba: 1, 1, 1, 0.2  # Білий колір з прозорістю 50%
@@ -12,7 +12,7 @@
     Label:                      
         text: root.timeLbl
         size_hint: None, None
-        font_size: 64
+        font_size: 52
         font_name: 'fonts/hemi_head_bd_it.ttf'
         markup: True
         width: self.parent.width
@@ -23,14 +23,14 @@
         text_size: self.size
     
     Label:                                          #Master image label info
-        text: root.masterImage
+        text: root.jigState
         size_hint: None, None
-        font_size: 22
+        font_size: 18
         font_name: 'fonts/hemi_head_bd_it.ttf'
         markup: True
         width: self.parent.width
         height: self.parent.height
-        pos: (self.parent.pos[0] + 300, self.parent.pos[1]+30)
+        pos: (self.parent.pos[0] + 300, self.parent.pos[1]+25)
         halign: 'left'
         valign: 'middle'
         text_size: self.size 
@@ -38,7 +38,7 @@
     Label:                                          #Controll source label info
         text: root.ctrlType
         size_hint: None, None
-        font_size: 22
+        font_size: 18
         font_name: 'fonts/hemi_head_bd_it.ttf'
         markup: True
         width: self.parent.width
@@ -51,37 +51,37 @@
     Label:                                          #IP, Host info lable
         text: root.ipAddr
         size_hint: None, None
-        font_size: 22
+        font_size: 18
         font_name: 'fonts/hemi_head_bd_it.ttf'
         markup: True
         width: self.parent.width
         height: self.parent.height
-        pos: (self.parent.pos[0] + 300, self.parent.pos[1]-30)
+        pos: (self.parent.pos[0] + 300, self.parent.pos[1]-25)
         halign: 'left'
         valign: 'middle'
         text_size: self.size 
 
 
-
+    #   Passed, failed total label
     Label:                      
         text: root.runStatus
         size_hint: None, None
-        font_size: 22
+        font_size: 18
         font_name: 'fonts/hemi_head_bd_it.ttf'
         markup: True
         width: self.parent.width
         height: self.parent.height
-        pos: (self.parent.pos[0] + 840, self.parent.pos[1])
+        pos: (self.parent.pos[0] + 600, self.parent.pos[1])
         halign: 'left'
         valign: 'middle'
         text_size: self.size    
     
     
-    Button:
-        text: "NewImg"
-        size: 100, 40
-        size_hint: None, None
-        pos: (self.parent.pos[0]+700, self.parent.pos[1]+50)
-        font_size: 24
-        on_release: root.imageCreateWindow()
+    #Button:
+    #    text: "NewImg"
+    #    size: 100, 40
+    #    size_hint: None, None
+    #    pos: (self.parent.pos[0]+700, self.parent.pos[1]+50)
+    #    font_size: 24
+    #    on_release: root.imageCreateWindow()
         

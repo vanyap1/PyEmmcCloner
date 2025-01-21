@@ -43,7 +43,9 @@
             }
         }
         function onButtonClick(buttonId) {
-            sendCommand(buttonId + '=pressed');
+            const commandText = document.getElementById('commandInput').value;
+            //sendCommand(buttonId + '=pressed');
+            sendCommand(buttonId + '/' + commandText);
         }
     </script>
 </head>
@@ -53,9 +55,15 @@
         <h1>Command interface</h1>
         <div class="input-group">
             <select id="slotsDropdown">
-                <option value="">none</option>
+                <option value="slot0">slot0</option>
                 <option value="slot1">slot1</option>
                 <option value="slot2">slot2</option>
+                <option value="slot3">slot3</option>
+                <option value="slot4">slot4</option>
+                <option value="slot5">slot5</option>
+                <option value="slot6">slot6</option>
+                <option value="slot7">slot7</option>
+                <option value="">none</option>
             </select>
             <select id="commandDropdown">
                 <option value="status">status</option>
@@ -75,11 +83,12 @@
             <h2>Result:</h2>
             <pre id="result">No data</pre>
         </div>
+        
         <div class="button-group">
-            <button onclick="onButtonClick('btn0')">Button 0</button>
-            <button onclick="onButtonClick('btn1')">Button 1</button>
-            <button onclick="onButtonClick('btn2')">Button 2</button>
-        </div>
+            <button onclick="onButtonClick('readimg')">Read image</button>
+            <button onclick="onButtonClick('writeimg')">write image</button>
+            <button onclick="onButtonClick('status')">Status</button>
+        </div>    
     </div>
 </body>
 

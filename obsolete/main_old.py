@@ -20,7 +20,7 @@ from kivy.uix.scatter import Scatter
 from kivy.properties import StringProperty, NumericProperty, BooleanProperty, ObjectProperty
 from datetime import datetime, date, timedelta
 from collections import namedtuple
-from remoteCtrl import start_server_in_thread
+from obsolete.remoteCtrl import start_server_in_thread
 from kivy.uix.popup import Popup
 from kivy.config import Config
 
@@ -56,7 +56,7 @@ Builder.load_file('kv/statusbar.kv')
 Builder.load_file('kv/masterImageCreator.kv')
 
 
-Window.size = (1024, 600)
+#Window.size = (800, 480)
 startYPos = 188             #Functional block
 
 class ImageCreator(Popup):

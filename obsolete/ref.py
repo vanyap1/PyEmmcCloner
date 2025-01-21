@@ -18,7 +18,7 @@ from kivy.uix.scatter import Scatter
 from kivy.properties import StringProperty, NumericProperty, BooleanProperty, ObjectProperty
 from datetime import datetime, date, timedelta
 from collections import namedtuple
-from remoteCtrl import start_server_in_thread
+from obsolete.remoteCtrl import start_server_in_thread
 from kivy.uix.popup import Popup
 
 
