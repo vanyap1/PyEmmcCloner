@@ -7,6 +7,7 @@ import pty
 from threading import Thread
 
 imagesRootDir = "/home/pi/images/"
+imagesBuilderRootDir = "./imgBuilder/"
 
 class ProcessStatus:
     runing = "running"
@@ -31,7 +32,7 @@ class BackgroundWorker(Thread):
         self._driveName = ""
         self.imageName = ""
         self._cmd = ""
-        self._progressInfo = ""
+        self._progressInfo = ProcessStatus.pending
         self.resultCb = None  
         self.resultsCounter = [0,0]
         self.progressPercent = 0
@@ -149,7 +150,25 @@ class BackgroundWorker(Thread):
             self._running = True
             return "ok: readDev"
         else:
-            return "err: Thread is busy"    
+            return "err: Thread is busy" 
+    
+    def buildDevFs(self, targetDev, rootFSzip) -> str:
+        resolvedDev = self._devNameResolve(targetDev)
+        if resolvedDev.startswith("err:"):
+            return resolvedDev
+        self._driveName = resolvedDev
+        
+        rootFSzipFullPath = f"{imagesBuilderRootDir}imgParts/{rootFSzip}"
+
+        if not os.path.exists(rootFSzipFullPath):
+            return f"err: {rootFSzipFullPath} not exist"
+            
+
+        print(f"img builder - {targetDev}; {resolvedDev}: {rootFSzipFullPath}")
+        return f"Ready to build {targetDev}; {rootFSzipFullPath}"
+
+
+
 
     def _devNameResolve(self, devName) -> str:
         dedvPath = subprocess.check_output(['readlink', '-f', f"/dev/{devName}"], text=True).strip()
@@ -207,7 +226,8 @@ class BackgroundWorker(Thread):
                     try:
                         output = os.read(master_fd, 256).decode()
                         if output:
-                            print(re.sub(r'[^\x20-\x7E]', '', output))
+                            print(re.sub(r'[^\x20-\x7E]', ',', output))
+                            self._progressInfo = output.replace(';', '').replace('\n', ',').replace('\r', ',')
                             match = re.search(r'\((\d+) MB, (\d+) MiB\) copied, (\d+ s), (\d+\.\d+ MB/s)', output)
                             if match:
                                 self.currentState = f"{match.group(1)}, {match.group(2)}; {match.group(3)}, {match.group(4)}"
@@ -225,10 +245,12 @@ class BackgroundWorker(Thread):
                 process.wait()
                 if(self.retcode == 0):
                     self.currentState = ProcessStatus.passed
+                    self._progressInfo = ProcessStatus.completed
                     self.passIncr()
                     print("Operation PASSED")
                 else:
                     self.currentState = ProcessStatus.failed
+                    self._progressInfo = ProcessStatus.completed
                     self.failIncr()
                     print("Operation FAILED")
                 self._cmd = ""
@@ -249,6 +271,7 @@ class BackgroundWorker(Thread):
                         if output:
                             print(re.sub(r'[^\x20-\x7E]', '', output))
                             match = re.search(r'\d+', output)
+                            self._progressInfo = output.replace(';', ',').replace('\n', ',').replace('\r', ',')
                             if match:
                                 bytesWrite = int(match.group())
                                 self.progressPercent = int((bytesWrite / self.imageSize) * 100)
@@ -270,10 +293,12 @@ class BackgroundWorker(Thread):
                 process.wait()
                 if(self.retcode == 0):
                     self.currentState = ProcessStatus.passed
+                    self._progressInfo = ProcessStatus.completed
                     self.passIncr()
                     print("Operation PASSED")
                 else:
                     self.currentState = ProcessStatus.failed
+                    self._progressInfo = ProcessStatus.completed
                     self.failIncr()
                     print("Operation FAILED")
                 self._cmd = ""

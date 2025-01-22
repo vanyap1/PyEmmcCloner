@@ -1,3 +1,4 @@
 __pycache__/
 imgBuilder/imgParts/*
 !imgBuilder/imgParts/*.txt
+config.ini

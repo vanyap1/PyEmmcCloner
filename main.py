@@ -1,24 +1,18 @@
-import subprocess
-import time
-import shlex
-import pty
+
 import re
 import configparser
 import json
-from urllib import request
-from kivy.uix.button import Button
-from kivy.uix.label import Label
+import os
+import shutil
 from kivy.uix.floatlayout import FloatLayout
-from kivy.uix.boxlayout import BoxLayout
-from kivy.uix.screenmanager import Screen , ScreenManager
+from kivy.uix.screenmanager import Screen 
 from threading import Thread
 from kivy.clock import Clock
 from kivy.app import App
 from kivy.lang import Builder
 from kivy.uix.image import Image
-from kivy.uix.scatter import Scatter
 from kivy.properties import StringProperty, NumericProperty, BooleanProperty, ObjectProperty
-from datetime import datetime, date, timedelta
+from datetime import datetime
 from collections import namedtuple
 
 #from remoteCtrl import start_server_in_thread
@@ -26,20 +20,26 @@ from remoteCtrlServer.udpService import UdpAsyncClient
 from remoteCtrlServer.httpserver import start_server_in_thread
 from backgroundServices.backgroundProcessor import BackgroundWorker
 
-from kivy.uix.popup import Popup
+#from kivy.uix.popup import Popup
 from kivy.config import Config
 
 from kivy.core.window import Window
-from kivy.factory import Factory
+#from kivy.factory import Factory
 
 from supportFunctions import *
-from PyIODriver.i2c_gpio import  I2CGPIOController, IO, DIR, Expander
+
 
 config = configparser.ConfigParser()
+
+if not os.path.exists("config.ini"):
+    print("Config file not found")
+    shutil.copy("config_init.ini", "config.ini")
+    print("Config file copied from config_init.ini to config.ini")
+    
 config.read("config.ini")
 
 
-# array position index
+# result array position index
 passed = 1
 failed = 0
 
@@ -61,13 +61,11 @@ targetdDevices = config.get('SlotWidgets', 'targetdDevices').split(', ')
 
 slotUdpHandlerPort = int(config.get('udpClient', 'udpPort')) 
 
-
 doorOpenSensorModuleNum = int(config.get('jig', 'doorOpenSensorModuleNum')) 
 
 
-
 Window.size = (800, 480)
-Window.fullscreen = True
+Window.fullscreen = False
 
 
 
@@ -144,7 +142,7 @@ class SlotWidget(Screen):
         pass
 
     def getSlotStatus(self):                                                    #Slot status getter
-        slotStatusBool, slotStatus, progress, resultPassFail, progress = self.workerInstance.getStatus() 
+        slotStatusBool, slotStatus, progress_info, resultPassFail, progress = self.workerInstance.getStatus() 
         
         self.yieldVal = 100
         if resultPassFail[failed] != 0 and resultPassFail[passed] != 0:
@@ -156,7 +154,7 @@ class SlotWidget(Screen):
                 print("Unexpected error:", sys.exc_info()[0])    
         self.slotStatusCounter = f"[color={Color.green}]Passed: {resultPassFail[passed]}[/color]\n [color={Color.red}]Failed: {resultPassFail[failed]}[/color]\n Yield: {self.yieldVal:.1f}%"
     
-        return slotStatusBool, slotStatus, progress, resultPassFail, progress
+        return slotStatusBool, slotStatus, progress_info, resultPassFail, progress
     
     def runProc(self):                                                          #Slot process start
 
@@ -170,11 +168,14 @@ class SlotWidget(Screen):
         return res
 
     def readImg(self, imagePath):                                               #Read image from device
-        
         res = self.workerInstance.readDev(self.targetDev, imagePath)    
         return res
-    
-    
+    def buildImg(self, rootFSzip):                                              #Build image on device
+        res = self.workerInstance.buildDevFs(self.targetDev, rootFSzip)
+        return res
+    def getStatus(self):                                                        #Get slot status
+        return self.slotCurrentStatus
+
     ''' GPIO Based part
     OPI - Orange PI single board mini pc 
     OPI Shield GPIO baset communication part
@@ -248,7 +249,7 @@ class MainScreen(FloatLayout):
 
     def remCtrlCB(self, arg):                                   #Remote control callback
         #['', 'slot', '0', 'status']
-        reguest = arg.lower().split("/")                        #Split request to array
+        reguest = arg.split("/")                        #Split request to array
         print("CB arg-", reguest )
         result, number = self.checkIfSlotCmd(reguest[0])        #Check if request is slot command and slot number extraction
         if result:
@@ -262,17 +263,17 @@ class MainScreen(FloatLayout):
                     resultBool, resultStr, progress = self.emmcSlots[number].getSlotStatus()
                     print(f"status: {resultBool}; {resultStr}; {progress}")
                     return f"{resultBool}; {resultStr}; {progress}"
-                elif(reguest[1] == "run"):
-                    self.emmcSlots[number].backgroundWorkerCmd("start")
-                elif(reguest[1] == "stop"):
-                    self.emmcSlots[number].backgroundWorkerCmd("stop")
-                elif(reguest[1] == "crpi" or reguest[1] == "copi" or reguest[1] == "rst"):
-                    if self.emmcSlots[number].emmcConnInitConnection(reguest[1]):
-                        return "complete"
-                    else:
-                        return "error"
+                
                 elif(reguest[1] == "status"):
-                    return f"not implemented"
+                    statusRes = self.emmcSlots[number].getSlotStatus()
+                    slotFree = False
+                    if statusRes[0] == True:
+                        slotFree = True
+                    statusResStr = statusRes[1].replace(";", ",")     
+                    return F"info: {slotFree}; {statusResStr}; {statusRes[2]}; {statusRes[3][1]}; {statusRes[3][0]}; {statusRes[4]}"
+                
+                elif(reguest[1] == "buildimg"):
+                    return  self.emmcSlots[number].buildImg(reguest[2])
                 
                 elif(reguest[1] == "readimg"): 
                     res = self.isSlotReady(number)
