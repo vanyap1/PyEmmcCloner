@@ -1,4 +1,3 @@
-
 import re
 import configparser
 import json
@@ -13,12 +12,12 @@ from kivy.lang import Builder
 from kivy.uix.image import Image
 from kivy.properties import StringProperty, NumericProperty, BooleanProperty, ObjectProperty
 from datetime import datetime
-from collections import namedtuple
 
 #from remoteCtrl import start_server_in_thread
 from remoteCtrlServer.udpService import UdpAsyncClient
 from remoteCtrlServer.httpserver import start_server_in_thread
 from backgroundServices.backgroundProcessor import BackgroundWorker
+
 
 #from kivy.uix.popup import Popup
 from kivy.config import Config
@@ -35,7 +34,9 @@ if not os.path.exists("config.ini"):
     print("Config file not found")
     shutil.copy("config_init.ini", "config.ini")
     print("Config file copied from config_init.ini to config.ini")
-    
+else:
+    supportFNs.merge_configs("config_init.ini", "config.ini")
+
 config.read("config.ini")
 
 
@@ -43,35 +44,35 @@ config.read("config.ini")
 passed = 1
 failed = 0
 
-#default config values
-masterImageDev = config.get('DEFAULT', 'masterImageDev')
-masterImageDir = config.get('DEFAULT', 'masterImageDir')
-screenBgImage = config.get('DEFAULT', 'bgImage')
+#application config values
+applicationName = config.get('App', 'name')
+applicationIcon = config.get('App', 'icon')
 
+logoPng = config.get('App', 'logoPath')
+logoLine1 = config.get('App', 'logoLine1')
+logoLine2 = config.get('App', 'logoLine2')
+
+
+#default config values
+masterImageDev = config.get('DiskAndPath', 'masterImageDev')
+masterImageDir = config.get('DiskAndPath', 'masterImageDir')
+screenBgImage = config.get('DiskAndPath', 'bgImage')
+
+#slot config values
+targetdDevices = config.get('DiskAndPath', 'targetdDevices').split(', ')
 
 #network config values
 remCtrlPort = int(config.get('Network', 'remCtrlPort'))
 remCtrlHost = config.get('Network', 'remCtrlHost')
 
-
-#slot config values
-targetdDevices = config.get('SlotWidgets', 'targetdDevices').split(', ')
-
-#GPIO expander config values
-
 slotUdpHandlerPort = int(config.get('udpClient', 'udpPort')) 
 
 doorOpenSensorModuleNum = int(config.get('jig', 'doorOpenSensorModuleNum')) 
 
+window_size = config.get("App", "window_size").split(',')
+Window.size = (int(window_size[0]), int(window_size[1]))
+Window.fullscreen = config.getboolean("App", "fullscreen")
 
-Window.size = (800, 480)
-Window.fullscreen = False
-
-
-
-
-
-Result = namedtuple('Result', ['passed', 'failed'])
 
 class Color():
     passed = "00ff00"
@@ -91,7 +92,9 @@ startYPos = (200)/2             #Functional block
 
 
 class UpperStatusbar(Screen):
-    timeLbl = StringProperty("System idle")
+    logoImg = StringProperty(logoPng)
+    devNameLine1 = StringProperty(logoLine1)
+    devNameLine2 = StringProperty(f"[color=1855D1]{logoLine2}[/color]")
     runStatus = StringProperty("run state")
     jigState = StringProperty("")
     ctrlType = StringProperty("--")
@@ -127,23 +130,18 @@ class SlotWidget(Screen):
     workerInstance = ObjectProperty(None)
     progresBarVal = NumericProperty(0) 
     
-
-    
     def workerCbReg(self):                                                      #Background worker result handler callback registration
         #Starting background worker
         self.workerInstance.startProc()                                         #Start background worker
         self.workerInstance.setDrive(self.targetDev)                            #Set target device
         self.workerInstance.cbRegister(self.resultHandlerCb)                    #Register callback for background worker
         
-    
-
     def resultHandlerCb(self, arg):                                             #Background worker callback handler
         print("resultHandlerCb-", arg)
         pass
 
     def getSlotStatus(self):                                                    #Slot status getter
         slotStatusBool, slotStatus, progress_info, resultPassFail, progress = self.workerInstance.getStatus() 
-        
         self.yieldVal = 100
         if resultPassFail[failed] != 0 and resultPassFail[passed] != 0:
             try:
@@ -153,16 +151,15 @@ class SlotWidget(Screen):
             except:
                 print("Unexpected error:", sys.exc_info()[0])    
         self.slotStatusCounter = f"[color={Color.green}]Passed: {resultPassFail[passed]}[/color]\n [color={Color.red}]Failed: {resultPassFail[failed]}[/color]\n Yield: {self.yieldVal:.1f}%"
-    
         return slotStatusBool, slotStatus, progress_info, resultPassFail, progress
     
     def runProc(self):                                                          #Slot process start
-
         pass
 
     def backgroundWorkerCmd(self, cmd):                                         #Background worker command setter
         self.workerInstance.setCmd(cmd)
         pass
+
     def writeImg(self, imagePath):                                              #Write image to device, 
         res = self.workerInstance.writeDev(self.targetDev, imagePath)
         return res
@@ -170,40 +167,28 @@ class SlotWidget(Screen):
     def readImg(self, imagePath):                                               #Read image from device
         res = self.workerInstance.readDev(self.targetDev, imagePath)    
         return res
+    
     def buildImg(self, rootFSzip):                                              #Build image on device
         res = self.workerInstance.buildDevFs(self.targetDev, rootFSzip)
         return res
+    
     def getStatus(self):                                                        #Get slot status
         return self.slotCurrentStatus
 
-    ''' GPIO Based part
-    OPI - Orange PI single board mini pc 
-    OPI Shield GPIO baset communication part
-    '''
-    def getJigStatus(self):                                                     #Check JIG status input pin
-        return True    
-    def isEmmcDetected(self):                                                   #Check eMMC card detection line
-        return True
-    
-    
-    
-    
+       
 
     
-        
-        
         
 class MainScreen(FloatLayout):
     def __init__(self, **kwargs):
         super(MainScreen, self).__init__(**kwargs)
         
-
         self.supportFns = supportFNs                            #Support functions object creation
         self.jigState = False                                   #JIG state variable
         self.background_image = Image(source=screenBgImage, size=self.size)
         self.add_widget(self.background_image)                  #Add background image to screen
         self.statusBar = UpperStatusbar(pos=(10, 190), size=(800-44, 80), size_hint=(None, None))
-        self.statusBar.ctrlType = self.setColor("LOCAL" , Color.green)
+        self.statusBar.ctrlType = self.setColor("REM" , Color.green)
         
         self.statusBar.ipAddr = self.setColor(f"{self.supportFns.get_ip_addresses(self)}:{remCtrlPort}", Color.yellow)
         self.add_widget(self.statusBar)                         #Add status bar to screen
@@ -227,7 +212,6 @@ class MainScreen(FloatLayout):
             emmcWidget.workerInstance = slotWorker              #Send worker instance to slotInstance
             emmcWidget.workerCbReg()                            #Register callback for worker
 
-
             #Add slots to slots array
             self.emmcSlots.append(emmcWidget)                   #Add slot to slots array
             self.add_widget(self.emmcSlots[index])              #Add slot widget to screen
@@ -237,7 +221,7 @@ class MainScreen(FloatLayout):
         self.server, self.server_thread = start_server_in_thread(remCtrlPort, self.remCtrlCB, self) #Start remote control server
         Clock.schedule_interval(lambda dt: self.update_time(), 1)                                   #Start screen update timer
         self.udpClient = UdpAsyncClient(self)
-        self.udpClient.startListener(slotUdpHandlerPort, self.udbCbWorker)
+        self.udpClient.startListener(slotUdpHandlerPort, self.udpCbWorker)
 
     def isSlotReady(self, slotNum):
         if self.emmcSlots[slotNum].emmcInserted == False:
@@ -245,7 +229,8 @@ class MainScreen(FloatLayout):
         if self.emmcSlots[slotNum].emmcConnectionDir != "crpi":
             return "err: Slot is not in crpi mode" 
         if self.jigState == False:
-            return "err: JIG is not closed"       
+            return "err: JIG is not closed"  
+        return ""     
 
     def remCtrlCB(self, arg):                                   #Remote control callback
         #['', 'slot', '0', 'status']
@@ -259,12 +244,8 @@ class MainScreen(FloatLayout):
             if number >= len(self.emmcSlots):
                 return f"err: slot {number} does not exist"
             if reguest[1]:
-                if(reguest[1] == "status_obsolete"):
-                    resultBool, resultStr, progress = self.emmcSlots[number].getSlotStatus()
-                    print(f"status: {resultBool}; {resultStr}; {progress}")
-                    return f"{resultBool}; {resultStr}; {progress}"
-                
-                elif(reguest[1] == "status"):
+
+                if(reguest[1] == "status"):
                     statusRes = self.emmcSlots[number].getSlotStatus()
                     slotFree = False
                     if statusRes[0] == True:
@@ -273,9 +254,13 @@ class MainScreen(FloatLayout):
                     return F"info: {slotFree}; {statusResStr}; {statusRes[2]}; {statusRes[3][1]}; {statusRes[3][0]}; {statusRes[4]}"
                 
                 elif(reguest[1] == "buildimg"):
+                    if not reguest[2]:
+                        return "err: no build pack path"
                     return  self.emmcSlots[number].buildImg(reguest[2])
                 
                 elif(reguest[1] == "readimg"): 
+                    if not reguest[2]:
+                        return "err: no image path"
                     res = self.isSlotReady(number)
                     if res:
                         return res
@@ -283,17 +268,19 @@ class MainScreen(FloatLayout):
                         return  self.emmcSlots[number].readImg(reguest[2])
                     
                 elif(reguest[1] == "writeimg"):
+                    if not reguest[2]:
+                        return "err: no image path"
                     res = self.isSlotReady(number)
                     if res:
                         return res
                     else:
                         return   self.emmcSlots[number].writeImg(reguest[2])    
-                return "ok" 
+                return "err: unknown command" 
 
         else:
             #common command handler
             print(reguest)
-            return "ok"
+            return "err: unknown command"
         
         return "incorrect request"
     
@@ -328,12 +315,12 @@ class MainScreen(FloatLayout):
         yieldTotal = 100
         if ((passedTotal + failedTotal) != 0):
             yieldTotal = (passedTotal / (passedTotal + failedTotal))*100
-        self.statusBar.timeLbl = f'[color=0066ff]{dateTime}[/color]'
+
         self.statusBar.runStatus = f"[color={Color.green}]Passed: {passedTotal};[/color]"
         self.statusBar.runStatus += f"\n[color={Color.red}]Failed: {failedTotal};[/color]"
         self.statusBar.runStatus += f"\n[color={Color.yellow}]Yield: {yieldTotal:.1f};[/color]"
 
-    def udbCbWorker(self, arg):
+    def udpCbWorker(self, arg):
         try:
             data = json.loads(arg)
             #print(data)
@@ -364,10 +351,13 @@ class MainScreen(FloatLayout):
         except json.JSONDecodeError as e:
             print("Failed to deserialize JSON:", e)
         pass
-        
+
+
 
 class BoxApp(App):
     def build(self):
+        self.title = applicationName
+        self.icon = applicationIcon
         self.screen = MainScreen()
         return self.screen
     

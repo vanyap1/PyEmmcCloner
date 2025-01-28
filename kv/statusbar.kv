@@ -9,28 +9,51 @@
             size: self.size
             pos: self.pos
 
-    Label:                      
-        text: root.timeLbl
+    Image:
+        source: root.logoImg  # Вкажіть шлях до вашого логотипу
         size_hint: None, None
-        font_size: 52
+        size: 80, 80
+        pos: (self.parent.pos[0]+10, self.parent.pos[1])
+
+    Label:                      
+        text: root.devNameLine1
+        size_hint: None, None
+        font_size: 22
         font_name: 'fonts/hemi_head_bd_it.ttf'
+        width: 300
         markup: True
-        width: self.parent.width
-        height: self.parent.height
-        pos: self.parent.pos
+        #width: self.parent.width
+        #height: self.parent.height
+        pos: (self.parent.pos[0]+100, self.parent.pos[1]+10)
         halign: 'left'
         valign: 'middle'
         text_size: self.size
+
+    Label:                      
+        text: root.devNameLine2
+        size_hint: None, None
+        font_size: 18
+        font_name: 'fonts/hemi_head_bd_it.ttf'
+        width: 300
+        markup: True
+        #width: self.parent.width
+        #height: self.parent.height
+        pos: (self.parent.pos[0]+100, self.parent.pos[1]-20)
+        halign: 'center'
+        valign: 'middle'
+        text_size: self.size    
     
+
+
+
     Label:                                          #Master image label info
         text: root.jigState
         size_hint: None, None
         font_size: 18
         font_name: 'fonts/hemi_head_bd_it.ttf'
         markup: True
-        width: self.parent.width
-        height: self.parent.height
-        pos: (self.parent.pos[0] + 300, self.parent.pos[1]+25)
+        width: 100
+        pos: (self.parent.pos[0] + 400, self.parent.pos[1]+10)
         halign: 'left'
         valign: 'middle'
         text_size: self.size 
@@ -41,9 +64,8 @@
         font_size: 18
         font_name: 'fonts/hemi_head_bd_it.ttf'
         markup: True
-        width: self.parent.width
-        height: self.parent.height
-        pos: (self.parent.pos[0] + 300, self.parent.pos[1])
+        width: 100
+        pos: (self.parent.pos[0] + 400, self.parent.pos[1]-10)
         halign: 'left'
         valign: 'middle'
         text_size: self.size 
@@ -54,9 +76,8 @@
         font_size: 18
         font_name: 'fonts/hemi_head_bd_it.ttf'
         markup: True
-        width: self.parent.width
-        height: self.parent.height
-        pos: (self.parent.pos[0] + 300, self.parent.pos[1]-25)
+        width: 180
+        pos: (self.parent.pos[0] + 400, self.parent.pos[1]-30)
         halign: 'left'
         valign: 'middle'
         text_size: self.size 

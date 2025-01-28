@@ -216,7 +216,7 @@ class BackgroundWorker(Thread):
         while self._running:
             if self._cmd == "read":
                 self.progressPercent = 100
-                self.cmd = f'dd if={self._driveName} of={imagesRootDir}{self.imageName} status=progress bs=256M count=4'
+                self.cmd = f'dd if={self._driveName} of={imagesRootDir}{self.imageName} status=progress bs=32M count=32'
                 print(self.cmd)
                 master_fd, slave_fd = pty.openpty()
                 process = subprocess.Popen(shlex.split(self.cmd), stdout=slave_fd, stderr=subprocess.STDOUT, close_fds=True)
@@ -258,7 +258,7 @@ class BackgroundWorker(Thread):
             
             #Write image to device
             elif self._cmd == "write":
-                self.cmd = f'dd if={imagesRootDir}{self.imageName} of={self._driveName} status=progress bs=256M'
+                self.cmd = f'dd if={imagesRootDir}{self.imageName} of={self._driveName} status=progress bs=32M count=32'
                 self.imageSize = os.path.getsize(f"{imagesRootDir}{self.imageName}")
                 print(self.cmd)
                 master_fd, slave_fd = pty.openpty()
