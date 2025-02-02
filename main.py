@@ -10,7 +10,7 @@ from kivy.clock import Clock
 from kivy.app import App
 from kivy.lang import Builder
 from kivy.uix.image import Image
-from kivy.properties import StringProperty, NumericProperty, BooleanProperty, ObjectProperty
+from kivy.properties import StringProperty, NumericProperty, BooleanProperty, ObjectProperty, ListProperty
 from datetime import datetime
 
 #from remoteCtrl import start_server_in_thread
@@ -114,14 +114,15 @@ class UpperStatusbar(Screen):
 class SlotWidget(Screen):
     label_text = StringProperty("System idle")
     slotCurrentStatus = StringProperty("pending")
-    
+    bg_color = ListProperty([1, 1, 1, 0.2])
     slotStatusCounter = StringProperty("Passed: 0\n Failed: 0\n Yield: 100%")
     targetDev = StringProperty("none")
     jigStatus = BooleanProperty(False)
     emmcInserted = BooleanProperty(False)
+    slotTime = NumericProperty(0)
     emmcConnectionDir = StringProperty("none")
-    emmcCurrentState = StringProperty("EMMC Connected")
-    slotStateusLabel = StringProperty("EMMC not detect")
+    emmcCurrentState = StringProperty(f"[color={Color.green}]EMMC Connected[/color]")
+    slotStatusLabel = StringProperty(f"[color={Color.red}]EMMC slot waiting[/color]")
 
     masterImage = StringProperty("none")
     failed = NumericProperty(0)
@@ -129,7 +130,8 @@ class SlotWidget(Screen):
     slotName = StringProperty("")
     workerInstance = ObjectProperty(None)
     progresBarVal = NumericProperty(0) 
-    
+    slotActive = BooleanProperty(False)
+
     def workerCbReg(self):                                                      #Background worker result handler callback registration
         #Starting background worker
         self.workerInstance.startProc()                                         #Start background worker
@@ -151,7 +153,7 @@ class SlotWidget(Screen):
             except:
                 print("Unexpected error:", sys.exc_info()[0])    
         self.slotStatusCounter = f"[color={Color.green}]Passed: {resultPassFail[passed]}[/color]\n [color={Color.red}]Failed: {resultPassFail[failed]}[/color]\n Yield: {self.yieldVal:.1f}%"
-        return slotStatusBool, slotStatus, progress_info, resultPassFail, progress
+        return slotStatusBool, slotStatus, progress_info, resultPassFail, progress, self.slotActive
     
     def runProc(self):                                                          #Slot process start
         pass
@@ -251,7 +253,7 @@ class MainScreen(FloatLayout):
                     if statusRes[0] == True:
                         slotFree = True
                     statusResStr = statusRes[1].replace(";", ",")     
-                    return F"info: {slotFree}; {statusResStr}; {statusRes[2]}; {statusRes[3][1]}; {statusRes[3][0]}; {statusRes[4]}"
+                    return F"info: {slotFree}; {statusResStr}; {statusRes[2]}; {statusRes[3][1]}; {statusRes[3][0]}; {statusRes[4]}, {statusRes[5]}"
                 
                 elif(reguest[1] == "buildimg"):
                     if not reguest[2]:
@@ -311,6 +313,12 @@ class MainScreen(FloatLayout):
             emmcSlot.passed = emmcSlot.getSlotStatus()[3][1]
             emmcSlot.failed = emmcSlot.getSlotStatus()[3][0]
             emmcSlot.progresBarVal = emmcSlot.getSlotStatus()[4] 
+            if(int(datetime.now().timestamp()) - emmcSlot.slotTime > 3):
+                emmcSlot.slotStatusLabel = self.setColor("EMMC slot waiting", Color.red)
+                emmcSlot.slotActive = False
+            else:
+                emmcSlot.slotActive = True
+            
 
         yieldTotal = 100
         if ((passedTotal + failedTotal) != 0):
@@ -333,11 +341,15 @@ class MainScreen(FloatLayout):
                     self.emmcSlots[slotNum].emmcInserted = cardDetect
                     self.emmcSlots[slotNum].jigStatus = jigStatus
                     self.emmcSlots[slotNum].emmcConnectionDir = cardConnStatus
+                    self.emmcSlots[slotNum].slotTime = int(datetime.now().timestamp())
+                    
                     if cardDetect == False:
-                        self.emmcSlots[slotNum].slotStateusLabel = "EMMC not detect"
-                        self.emmcSlots[slotNum].emmcCurrentState = "EMMC Connected"    
+                        self.emmcSlots[slotNum].slotStatusLabel = self.setColor("EMMC not detect", Color.red)
+                        self.emmcSlots[slotNum].emmcCurrentState = self.setColor("EMMC Connected", Color.green)
+                        self.emmcSlots[slotNum].bg_color = [1, 0, 0, 0.3]    
                     else:
-                        self.emmcSlots[slotNum].slotStateusLabel = self.emmcSlots[slotNum].emmcCurrentState    
+                        self.emmcSlots[slotNum].slotStatusLabel = self.emmcSlots[slotNum].emmcCurrentState
+                        self.emmcSlots[slotNum].bg_color = [1, 1, 1, 0.2]    
 
                 if slotNum == 0:
                     self.statusBar.jigState = f"JIG: {jigStatus}"

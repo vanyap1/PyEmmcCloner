@@ -4,7 +4,7 @@
     height: 160
     canvas.before:
         Color:
-            rgba: 1, 1, 1, 0.2  # Білий колір з прозорістю 20%
+            rgba: root.bg_color  # Білий колір з прозорістю 20%
         Rectangle:
             size: self.size
             pos: self.pos
@@ -22,7 +22,7 @@
         text_size: self.width, None
 
     Label:                      #Short status label
-        text: root.slotStateusLabel
+        text: root.slotStatusLabel
         size_hint: None, None
         font_size: 28
         markup: True
