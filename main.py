@@ -143,7 +143,7 @@ class SlotWidget(Screen):
         pass
 
     def getSlotStatus(self):                                                    #Slot status getter
-        slotStatusBool, slotStatus, progress_info, resultPassFail, progress = self.workerInstance.getStatus() 
+        slotStatusBool, slotStatus, progress_info, resultPassFail, progress, progress_infoShort = self.workerInstance.getStatus() 
         self.yieldVal = 100
         if resultPassFail[failed] != 0 and resultPassFail[passed] != 0:
             try:
@@ -153,7 +153,7 @@ class SlotWidget(Screen):
             except:
                 print("Unexpected error:", sys.exc_info()[0])    
         self.slotStatusCounter = f"[color={Color.green}]Passed: {resultPassFail[passed]}[/color]\n [color={Color.red}]Failed: {resultPassFail[failed]}[/color]\n Yield: {self.yieldVal:.1f}%"
-        return slotStatusBool, slotStatus, progress_info, resultPassFail, progress, self.slotActive
+        return slotStatusBool, slotStatus, progress_info, progress_infoShort, resultPassFail, progress, self.slotActive
     
     def runProc(self):                                                          #Slot process start
         pass
@@ -242,18 +242,18 @@ class MainScreen(FloatLayout):
         if result:
             #slot command handler
             #number -=1                                          #Slot number correction
-            print("slot number-", number)
+            #print("slot number-", number)
             if number >= len(self.emmcSlots):
                 return f"err: slot {number} does not exist"
             if reguest[1]:
-
+                
                 if(reguest[1] == "status"):
                     statusRes = self.emmcSlots[number].getSlotStatus()
                     slotFree = False
                     if statusRes[0] == True:
                         slotFree = True
                     statusResStr = statusRes[1].replace(";", ",")     
-                    return F"info: {slotFree}; {statusResStr}; {statusRes[2]}; {statusRes[3][1]}; {statusRes[3][0]}; {statusRes[4]}, {statusRes[5]}"
+                    return F"info: {slotFree}; {statusResStr}; {statusRes[2]}; {statusRes[4][1]}; {statusRes[4][0]}; {statusRes[5]}, {statusRes[6]}"
                 
                 elif(reguest[1] == "buildimg"):
                     if not reguest[2]:
@@ -276,7 +276,10 @@ class MainScreen(FloatLayout):
                     if res:
                         return res
                     else:
-                        return   self.emmcSlots[number].writeImg(reguest[2])    
+                        return   self.emmcSlots[number].writeImg(reguest[2])
+                elif(reguest[1] == "stop"):
+                    self.emmcSlots[number].backgroundWorkerCmd("cancel")
+                    return "info: slot stopped"
                 return "err: unknown command" 
 
         else:
@@ -309,10 +312,15 @@ class MainScreen(FloatLayout):
         for emmcSlot in self.emmcSlots:
             passedTotal += emmcSlot.passed
             failedTotal += emmcSlot.failed
-            emmcSlot.label_text = emmcSlot.getSlotStatus()[1]
-            emmcSlot.passed = emmcSlot.getSlotStatus()[3][1]
-            emmcSlot.failed = emmcSlot.getSlotStatus()[3][0]
-            emmcSlot.progresBarVal = emmcSlot.getSlotStatus()[4] 
+            emmcSlot.label_text = emmcSlot.getSlotStatus()[3]
+            emmcSlot.passed = emmcSlot.getSlotStatus()[4][1]
+            emmcSlot.failed = emmcSlot.getSlotStatus()[4][0]
+            emmcSlot.progresBarVal = emmcSlot.getSlotStatus()[5]
+            #print(emmcSlot.getSlotStatus()) 
+            if emmcSlot.emmcInserted == False:
+                if emmcSlot.getSlotStatus()[1] == "running":
+                    emmcSlot.backgroundWorkerCmd("cancel")
+        
             if(int(datetime.now().timestamp()) - emmcSlot.slotTime > 3):
                 emmcSlot.slotStatusLabel = self.setColor("EMMC slot waiting", Color.red)
                 emmcSlot.slotActive = False

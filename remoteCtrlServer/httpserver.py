@@ -7,13 +7,15 @@ class HTTPRequestHandler(BaseHTTPRequestHandler):
         self.client_instance = client_instance
         self.clientCbFunction = clientCbFunction
         super().__init__(*args, **kwargs)
-
+    def log_message(self, format, *args):
+        # No logging
+        return
     def do_GET(self):
         if self.path == '/':
             self.path = '/index.html'
     
         file_path = os.path.join('remoteCtrlServer/html', self.path[1:])  # Remove leading '/' from path and prepend 'html/'
-        print(file_path)
+        #print(file_path)
         if self.client_instance:
             if self.path.startswith('/cmd:'):
                 command = self.path[len('/cmd:'):]

@@ -33,6 +33,7 @@ class BackgroundWorker(Thread):
         self.imageName = ""
         self._cmd = ""
         self._progressInfo = ProcessStatus.pending
+        self._progressInfoShort = ""
         self.resultCb = None  
         self.resultsCounter = [0,0]
         self.progressPercent = 0
@@ -81,7 +82,7 @@ class BackgroundWorker(Thread):
         """
         Повертає поточний статус потоку.
         """
-        return self.isFree(), self.currentState, self._progressInfo, self.resultsCounter, self.progressPercent
+        return self.isFree(), self.currentState, self._progressInfo, self.resultsCounter, self.progressPercent, self._progressInfoShort
     
     def isFree(self) -> bool:
         if (self.currentState == ProcessStatus.pending or 
@@ -216,39 +217,53 @@ class BackgroundWorker(Thread):
         while self._running:
             if self._cmd == "read":
                 self.progressPercent = 100
-                self.cmd = f'dd if={self._driveName} of={imagesRootDir}{self.imageName} status=progress bs=32M'
+                self.cmd = f'dd if={self._driveName} of={imagesRootDir}{self.imageName} status=progress bs=1M'
                 print(self.cmd)
                 master_fd, slave_fd = pty.openpty()
                 process = subprocess.Popen(shlex.split(self.cmd), stdout=slave_fd, stderr=subprocess.STDOUT, close_fds=True)
                 os.close(slave_fd)
                 self.currentState = ProcessStatus.runing
+                self.retcode = 1
                 while True:
                     try:
                         output = os.read(master_fd, 256).decode()
                         if output:
                             print(re.sub(r'[^\x20-\x7E]', ',', output))
                             self._progressInfo = output.replace(';', '').replace('\n', ',').replace('\r', ',')
-                            match = re.search(r'\((\d+) MB, (\d+) MiB\) copied, (\d+ s), (\d+\.\d+ MB/s)', output)
-                            if match:
-                                self.currentState = f"{match.group(1)}, {match.group(2)}; {match.group(3)}, {match.group(4)}"
+                            
+                            datapart = output.replace("(", "").replace(",", "").replace("\r", "").replace(")", "").split(" ")
+                            if len(datapart) > 10:
+                                self._progressInfoShort = f"{datapart[2]}{datapart[3]}; {datapart[9]}{datapart[10]}; {datapart[7]}{datapart[8]}" 
+                            else:
+                                self._progressInfoShort = "running"
+                            
+                            if "error" in output.lower() or "failed" in output.lower():
+                                process.terminate()
+                                self._progressInfoShort = ProcessStatus.completed
+                                self.currentState = ProcessStatus.failed
+                                self._progressInfo = ProcessStatus.completed
+                                self.failIncr()
 
                         if(self._cmd == "cancel"):
+                            process.terminate()
                             break   
                     except OSError:
-                        pass
-                    #break
-                    self.retcode = process.poll()
-                    if self.retcode is not None:
                         break
+                    self.retcode = process.poll()
+                    #if self.retcode is not None:
+                    #    break
                     time.sleep(0.1)
                 os.close(master_fd)
-                process.wait()
+                self.retcode = process.wait()
+                
                 if(self.retcode == 0):
+                    self._progressInfoShort = ProcessStatus.completed
                     self.currentState = ProcessStatus.passed
                     self._progressInfo = ProcessStatus.completed
                     self.passIncr()
                     print("Operation PASSED")
                 else:
+                    self._progressInfoShort = ProcessStatus.completed
                     self.currentState = ProcessStatus.failed
                     self._progressInfo = ProcessStatus.completed
                     self.failIncr()
@@ -258,45 +273,60 @@ class BackgroundWorker(Thread):
             
             #Write image to device
             elif self._cmd == "write":
-                self.cmd = f'dd if={imagesRootDir}{self.imageName} of={self._driveName} status=progress bs=32M'
+                self.cmd = f'dd if={imagesRootDir}{self.imageName} of={self._driveName} status=progress bs=1M'
                 self.imageSize = os.path.getsize(f"{imagesRootDir}{self.imageName}")
                 print(self.cmd)
                 master_fd, slave_fd = pty.openpty()
                 process = subprocess.Popen(shlex.split(self.cmd), stdout=slave_fd, stderr=subprocess.STDOUT, close_fds=True)
                 os.close(slave_fd)
                 self.currentState = ProcessStatus.runing
+                self.retcode = 1
                 while True:
                     try:
                         output = os.read(master_fd, 256).decode()
                         if output:
-                            print(re.sub(r'[^\x20-\x7E]', '', output))
+                            #print(re.sub(r'[^\x20-\x7E]', '', output))
                             match = re.search(r'\d+', output)
                             self._progressInfo = output.replace(';', ',').replace('\n', ',').replace('\r', ',')
                             if match:
                                 bytesWrite = int(match.group())
                                 self.progressPercent = int((bytesWrite / self.imageSize) * 100)
                             
-                            match = re.search(r'\((\d+) MB, (\d+) MiB\) copied, (\d+ s), (\d+\.\d+ MB/s)', output)
-                            if match:
-                                self.currentState = f"{match.group(1)}, {match.group(2)}; {match.group(3)}, {match.group(4)}"
-                        
+                            datapart = output.replace("(", "").replace(",", "").replace("\r", "").replace(")", "").split(" ")
+                            if len(datapart) > 10:
+                                self._progressInfoShort = f"{datapart[2]}{datapart[3]}; {datapart[9]}{datapart[10]}; {datapart[7]}{datapart[8]}" 
+                            else:
+                                self._progressInfoShort = "running"
+
+                            if "error" in output.lower() or "failed" in output.lower():
+                                print("Помилка запису виявлена, зупинка процесу.")
+                                process.terminate()
+                                self._progressInfoShort = ProcessStatus.completed
+                                self.currentState = ProcessStatus.failed
+                                self._progressInfo = ProcessStatus.completed
+                                self.failIncr()
+
                         if(self._cmd == "cancel"):
+                            process.terminate()
                             break   
                     except OSError:
-                        pass
-                    #break
-                    self.retcode = process.poll()
-                    if self.retcode is not None:
                         break
+                    self.retcode = process.poll()
+                    #if self.retcode is not None:
+                    #    break
                     time.sleep(0.1)
                 os.close(master_fd)
-                process.wait()
+                self.retcode = process.wait()
+                print(f"Process is done ---------------------<<<<<<<<< {self.retcode}")
+                
                 if(self.retcode == 0):
+                    self._progressInfoShort = ProcessStatus.completed
                     self.currentState = ProcessStatus.passed
                     self._progressInfo = ProcessStatus.completed
                     self.passIncr()
                     print("Operation PASSED")
                 else:
+                    self._progressInfoShort = ProcessStatus.completed
                     self.currentState = ProcessStatus.failed
                     self._progressInfo = ProcessStatus.completed
                     self.failIncr()
