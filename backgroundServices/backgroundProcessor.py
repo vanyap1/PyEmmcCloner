@@ -217,7 +217,7 @@ class BackgroundWorker(Thread):
         while self._running:
             if self._cmd == "read":
                 self.progressPercent = 100
-                self.cmd = f'dd if={self._driveName} of={imagesRootDir}{self.imageName} status=progress bs=1M'
+                self.cmd = f'dd if={self._driveName} of={imagesRootDir}{self.imageName} status=progress bs=1M count=256'
                 print(self.cmd)
                 master_fd, slave_fd = pty.openpty()
                 process = subprocess.Popen(shlex.split(self.cmd), stdout=slave_fd, stderr=subprocess.STDOUT, close_fds=True)

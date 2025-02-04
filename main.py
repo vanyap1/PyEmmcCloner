@@ -284,7 +284,30 @@ class MainScreen(FloatLayout):
 
         else:
             #common command handler
-            print(reguest)
+            print("common command handler" , reguest)
+            if(reguest[0] == "imgmaker" and len(reguest) >= 2):
+                
+                if(reguest[1] == "check"):
+                    if(os.path.isfile(f"{masterImageDir}{reguest[2]}.img")):
+                        return "ok"
+                    else:
+                        return "err; file does not exist"
+                elif(reguest[1] == "remove"):
+                    try:
+                        if(os.path.isfile(f"{masterImageDir}{reguest[2]}.img")):
+                            os.remove(f"{masterImageDir}{reguest[2]}.img")
+                        return "ok"
+                    except:
+                        return "err; file remove error"
+            
+
+
+                else:
+                    return "err; wrong imgmaker command"
+
+
+
+
             return "err: unknown command"
         
         return "incorrect request"
