@@ -26,7 +26,7 @@ from kivy.core.window import Window
 #from kivy.factory import Factory
 
 from supportFunctions import *
-
+os.chdir("/home/pi/PyEmmcCloner")
 
 config = configparser.ConfigParser()
 
