@@ -1,0 +1,22 @@
+Task started at: 2025-11-30 11:21:41
+Command: bash diskPrepare.sh -d /dev/mmca -a Test_C_Sharp.img
+Working directory: diskBuilder
+==================================================
+Preparing disk...
+Detected that /dev/mmca is a symlink -> using /dev/sdb
+Disk device to prepare: /dev/sdb
+Root FS architecture: rootfsimgs/Test_C_Sharp.img
+Disk sectors: 30777343
+Partition 3 starts at sector 5111808 and ends at sector 30777342
+Creating partition table on /dev/sdb ...
+Partition 1: end=32767
+Partition 2: start=32768, end=5111807, size=5079040 sectors
+Partition 3: start=5111807
+Writing RootFS image...
+201326592 bytes (201 MB, 192 MiB) copied, 1 s, 191 MB/s335544320 bytes (336 MB, 320 MiB) copied, 2 s, 165 MB/s402653184 bytes (403 MB, 384 MiB) copied, 3 s, 133 MB/s452984832 bytes (453 MB, 432 MiB) copied, 4 s, 108 MB/s503316480 bytes (503 MB, 480 MiB) copied, 5 s, 93.6 MB/s536870912 bytes (537 MB, 512 MiB) copied, 6 s, 86.8 MB/s570425344 bytes (570 MB, 544 MiB) copied, 7 s, 81.5 MB/s620756992 bytes (621 MB, 592 MiB) copied, 8 s, 75.9 MB/s671088640 bytes (671 MB, 640 MiB) copied, 9 s, 71.7 MB/s704643072 bytes (705 MB, 672 MiB) copied, 10 s, 69.5 MB/s754974720 bytes (755 MB, 720 MiB) copied, 11 s, 66.9 MB/s788529152 bytes (789 MB, 752 MiB) copied, 12 s, 65.2 MB/s838860800 bytes (839 MB, 800 MiB) copied, 13 s, 62.9 MB/s872415232 bytes (872 MB, 832 MiB) copied, 14 s, 61.7 MB/s922746880 bytes (923 MB, 880 MiB) copied, 15 s, 60.1 MB/s956301312 bytes (956 MB, 912 MiB) copied, 16 s, 59.1 MB/s1006632960 bytes (1.0 GB, 960 MiB) copied, 17 s, 57.9 MB/s1040187392 bytes (1.0 GB, 992 MiB) copied, 18 s, 57.5 MB/s1090519040 bytes (1.1 GB, 1.0 GiB) copied, 19 s, 56.4 MB/s1124073472 bytes (1.1 GB, 1.0 GiB) copied, 20 s, 55.9 MB/s1174405120 bytes (1.2 GB, 1.1 GiB) copied, 21 s, 55.1 MB/s1207959552 bytes (1.2 GB, 1.1 GiB) copied, 22 s, 54.7 MB/s1258291200 bytes (1.3 GB, 1.2 GiB) copied, 23 s, 54.0 MB/s1291845632 bytes (1.3 GB, 1.2 GiB) copied, 24 s, 53.7 MB/s1342177280 bytes (1.3 GB, 1.2 GiB) copied, 25 s, 53.2 MB/s1375731712 bytes (1.4 GB, 1.3 GiB) copied, 26 s, 52.9 MB/s1426063360 bytes (1.4 GB, 1.3 GiB) copied, 27 s, 52.4 MB/s1476395008 bytes (1.5 GB, 1.4 GiB) copied, 28 s, 52.1 MB/s1509949440 bytes (1.5 GB, 1.4 GiB) copied, 29 s, 51.8 MB/s1560281088 bytes (1.6 GB, 1.5 GiB) copied, 30 s, 51.4 MB/s1593835520 bytes (1.6 GB, 1.5 GiB) copied, 31 s, 51.2 MB/s1644167168 bytes (1.6 GB, 1.5 GiB) copied, 32 s, 50.8 MB/s1677721600 bytes (1.7 GB, 1.6 GiB) copied, 33 s, 50.6 MB/s1711276032 bytes (1.7 GB, 1.6 GiB) copied, 34 s, 50.3 MB/s1761607680 bytes (1.8 GB, 1.6 GiB) copied, 35 s, 50.0 MB/s1795162112 bytes (1.8 GB, 1.7 GiB) copied, 36 s, 49.9 MB/s1845493760 bytes (1.8 GB, 1.7 GiB) copied, 37 s, 49.6 MB/s1895825408 bytes (1.9 GB, 1.8 GiB) copied, 38 s, 49.4 MB/s1929379840 bytes (1.9 GB, 1.8 GiB) copied, 39 s, 49.3 MB/s1979711488 bytes (2.0 GB, 1.8 GiB) copied, 40 s, 49.1 MB/s2013265920 bytes (2.0 GB, 1.9 GiB) copied, 41 s, 48.9 MB/s2063597568 bytes (2.1 GB, 1.9 GiB) copied, 42 s, 48.7 MB/s2097152000 bytes (2.1 GB, 2.0 GiB) copied, 43 s, 48.6 MB/s2147483648 bytes (2.1 GB, 2.0 GiB) copied, 44 s, 48.4 MB/s2181038080 bytes (2.2 GB, 2.0 GiB) copied, 45 s, 48.3 MB/s2231369728 bytes (2.2 GB, 2.1 GiB) copied, 46 s, 48.2 MB/s2264924160 bytes (2.3 GB, 2.1 GiB) copied, 47 s, 48.1 MB/s2315255808 bytes (2.3 GB, 2.2 GiB) copied, 48 s, 48.0 MB/s2348810240 bytes (2.3 GB, 2.2 GiB) copied, 49 s, 47.9 MB/s2399141888 bytes (2.4 GB, 2.2 GiB) copied, 50 s, 47.8 MB/s2432696320 bytes (2.4 GB, 2.3 GiB) copied, 51 s, 47.7 MB/s2483027968 bytes (2.5 GB, 2.3 GiB) copied, 52 s, 47.5 MB/s2516582400 bytes (2.5 GB, 2.3 GiB) copied, 53 s, 47.4 MB/s2566914048 bytes (2.6 GB, 2.4 GiB) copied, 54 s, 47.3 MB/s2600468480 bytes (2.6 GB, 2.4 GiB) copied, 55 s, 47.2 MB/s
+155+0 records in
+155+0 records out
+2600468480 bytes (2.6 GB, 2.4 GiB) copied, 62.7579 s, 41.4 MB/s
+ <<< Disk preparation completed successfully >>>
+Pass
+Task ended at: 2025-11-30 11:22:44; Process duration: 63.23 seconds

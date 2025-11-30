@@ -17,7 +17,7 @@ from datetime import datetime
 from remoteCtrlServer.udpService import UdpAsyncClient
 from remoteCtrlServer.httpserver import start_server_in_thread
 from backgroundServices.backgroundProcessor import BackgroundWorker
-
+from diskBuilder.diskAsyncService import DiskAsyncService
 
 #from kivy.uix.popup import Popup
 from kivy.config import Config
@@ -124,14 +124,16 @@ class SlotWidget(Screen):
     emmcCurrentState = StringProperty(f"[color={Color.green}]EMMC Connected[/color]")
     slotStatusLabel = StringProperty(f"[color={Color.red}]EMMC slot waiting[/color]")
 
+
     masterImage = StringProperty("none")
     failed = NumericProperty(0)
     passed = NumericProperty(0)
     slotName = StringProperty("")
     workerInstance = ObjectProperty(None)
+    imageWriterService = ObjectProperty(None)
     progresBarVal = NumericProperty(0) 
     slotActive = BooleanProperty(False)
-
+   
     def workerCbReg(self):                                                      #Background worker result handler callback registration
         #Starting background worker
         self.workerInstance.startProc()                                         #Start background worker
@@ -139,8 +141,15 @@ class SlotWidget(Screen):
         self.workerInstance.cbRegister(self.resultHandlerCb)                    #Register callback for background worker
         
     def resultHandlerCb(self, arg):                                             #Background worker callback handler
-        print("resultHandlerCb-", arg)
-        pass
+        #print(">>> - ", arg)
+        self.workerInstance.setStatusState(arg)
+        
+    def statusHandlerCb(self, arg):                                         #Background worker pass/fail result handler
+        print("statusHandlerCb-", arg)
+        if arg == "success":
+            self.workerInstance.incrPased()
+        else:
+            self.workerInstance.incrFailed()
 
     def getSlotStatus(self):                                                    #Slot status getter
         slotStatusBool, slotStatus, progress_info, resultPassFail, progress, progress_infoShort = self.workerInstance.getStatus() 
@@ -154,7 +163,14 @@ class SlotWidget(Screen):
                 print("Unexpected error:", sys.exc_info()[0])    
         self.slotStatusCounter = f"[color={Color.green}]Passed: {resultPassFail[passed]}[/color]\n [color={Color.red}]Failed: {resultPassFail[failed]}[/color]\n Yield: {self.yieldVal:.1f}%"
         return slotStatusBool, slotStatus, progress_info, progress_infoShort, resultPassFail, progress, self.slotActive
+
+    def writePartitionTable(self, device, dump):                                            #Write partition table to device
+        self.imageWriterService.perform_async_task(device, dump)
     
+    def writePartitionStatus(self):                                            #Write partition image to device
+        res = self.imageWriterService.get_task_status()
+        return f"Status: {res['status']} | Task: {res['current_task']} | Running: {res['is_running']} | Result: {res['result']}"
+
     def runProc(self):                                                          #Slot process start
         pass
 
@@ -210,9 +226,13 @@ class MainScreen(FloatLayout):
             emmcWidget.targetDev = device
             emmcWidget.slotName = f"{index}"
             
-            slotWorker = BackgroundWorker()                     #Background worker creation for slot long time process
-            emmcWidget.workerInstance = slotWorker              #Send worker instance to slotInstance
-            emmcWidget.workerCbReg()                            #Register callback for worker
+            slotWorker = BackgroundWorker()                       #Background worker creation for slot long time process
+            emmcWidget.workerInstance = slotWorker                                          #Send worker instance to slotInstance
+            emmcWidget.workerCbReg()                                                        #Register callback for worker
+
+            imageWriterService = DiskAsyncService(emmcWidget.resultHandlerCb, emmcWidget.statusHandlerCb)                                         #Disk image writer service creation
+            emmcWidget.imageWriterService = imageWriterService                              #Send image writer service instance to
+
 
             #Add slots to slots array
             self.emmcSlots.append(emmcWidget)                   #Add slot to slots array
@@ -280,7 +300,34 @@ class MainScreen(FloatLayout):
                 elif(reguest[1] == "stop"):
                     self.emmcSlots[number].backgroundWorkerCmd("cancel")
                     return "info: slot stopped"
-                return "err: unknown command" 
+               
+                elif(reguest[1].startswith("writePart")):
+                    arg = reguest[1].split("=")
+                    if len(arg) == 2:
+                        print(self.emmcSlots[number].targetDev)
+                        print("part args-", arg[1])
+                        res = self.emmcSlots[number].imageWriterService.perform_async_task("diskPrepare.sh", self.emmcSlots[number].targetDev, arg[1], True)
+                        return f"Status: {res['status']} | Task: {res['current_task']}"
+                    else :
+                        return "err: Filename must be specified"
+                    
+
+                elif(reguest[1].startswith("readPart")):
+                    arg = reguest[1].split("=")
+                    if len(arg) == 2:
+                        print(self.emmcSlots[number].targetDev)
+                        print("part args-", arg[1])
+                        res = self.emmcSlots[number].imageWriterService.perform_async_task("imgPrepare.sh", self.emmcSlots[number].targetDev, arg[1], False)
+                        return f"Status: {res['status']} | Task: {res['current_task']}"
+                    else :
+                        return "err: Filename must be specified"
+                
+
+                elif(reguest[1] == "writerPartStatus"):
+                    res = self.emmcSlots[number].imageWriterService.get_task_status()
+                    return f"Status: {res['status']} | Task: {res['current_task']} | Running: {res['is_running']} | Result: {res['result']}"
+
+                return "err: unknown command"
 
         else:
             #common command handler

@@ -77,6 +77,25 @@ class BackgroundWorker(Thread):
     def failIncr(self):
         self.resultsCounter[0] += 1
         #self.resultCb(f"resCnt: {self.resultsCounter}")
+    def setStatus(self, currentState, _progressInfo, resultsCounter, progressPercent, _progressInfoShort):
+        self.currentState = currentState
+        self._progressInfo = _progressInfo
+        self.resultsCounter = resultsCounter
+        self.progressPercent = progressPercent
+        self._progressInfoShort = _progressInfoShort
+    def setStatusState(self, currentState):
+        self.currentState = currentState
+        self._progressInfoShort = currentState
+
+    def incrPased(self):
+        self.resultsCounter[1] += 1
+    def incrFailed(self):
+        self.resultsCounter[0] += 1
+    def setProgress(self, currentState, progressInfo, progressPercent, progressInfoShort):
+        self.currentState = currentState
+        self._progressInfo = progressInfo
+        self.progressPercent = progressPercent
+        self._progressInfoShort = progressInfoShort
 
     def getStatus(self):
         """

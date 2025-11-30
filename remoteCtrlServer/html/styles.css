@@ -14,7 +14,7 @@ body {
     padding: 20px;
     border-radius: 8px;
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-    width: 500px;
+    width: 600px;
     text-align: center;
 }
 
@@ -26,7 +26,8 @@ h1 {
     margin-bottom: 20px;
 }
 
-select, input[type="text"] {
+select,
+input[type="text"] {
     padding: 10px;
     margin-right: 10px;
     border: 1px solid #ccc;

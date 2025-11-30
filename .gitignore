@@ -1,5 +1,6 @@
 __pycache__/
 *.pyc
 imgBuilder/imgParts/*
+diskBuilder/rootfsimgs/*
 !imgBuilder/imgParts/*.txt
 config.ini

@@ -29,7 +29,7 @@
             const command = document.getElementById('commandInput').value;
             const commandText = document.getElementById('commandDropdown').value;
 
-            if (commandText === 'cmd') {
+            if (commandText === 'cmd' || commandText === 'writePart' || commandText === 'readPart') {
                 if (command) {
                     sendCommand(commandText + '=' + command);
                     return;
@@ -72,6 +72,9 @@
                 <option value="stop">stop</option>
                 <option value="crpi">connRPI</option>
                 <option value="copi">connOPI</option>
+                <option value="writePart">writePart</option>
+                <option value="readPart">readPart</option>
+                <option value="writerPartStatus">writerPartStatus</option>
                 
             </select>
             <input type="text" id="commandInput" placeholder="Введіть команду">

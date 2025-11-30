@@ -1,0 +1,3 @@
+
+zip     -> sudo gzip -1 sdhRootFs.img
+unzip   -> gzip -d sdhRootFs.img.gz
