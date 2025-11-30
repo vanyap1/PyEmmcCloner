@@ -1,3 +1,9 @@
 
 zip     -> sudo gzip -1 sdhRootFs.img
 unzip   -> gzip -d sdhRootFs.img.gz
+
+add project to zip 
+    -> sudo tar -czpvf PyEmmcCloner_30112025.tar.zip PyEmmcCloner
+
+restore project
+    -> sudo tar -xzpvf PyEmmcCloner_30112025.tar.zip

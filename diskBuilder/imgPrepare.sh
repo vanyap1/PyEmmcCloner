@@ -93,6 +93,10 @@ echo "Dumping image from the target device partition..."
 ${EXEC_PREFIX} chmod 777 "${TARGET_DEVICE}"
 ${EXEC_PREFIX} chmod 777 "${TARGET_DEVICE}${PART_NUMBER}"
 
+echo "Calculating SHA256 hash of the partition..."
+PART_HASH=$(${EXEC_PREFIX}sha256sum "${TARGET_DEVICE}${PART_NUMBER}" | awk '{print $1}')
+echo "Partition SHA256: ${PART_HASH}"
+
 if ! dd if="${TARGET_DEVICE}${PART_NUMBER}" of="${ROOT_FS_IMG}" bs=4M status=progress conv=fsync; then
     echo " <<< ERROR: Failed to dump image from the target device partition"
     exit 9
